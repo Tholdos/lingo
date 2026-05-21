@@ -216,6 +216,12 @@ export const useGameStore = defineStore('game', () => {
 
     isProcessingGuess.value = true
     
+    // Check if word starts with the correct first letter (which is always revealed)
+    if (!bypassDictionaryCheck && guess[0] !== targetWord.value[0]) {
+      isProcessingGuess.value = false
+      return 'wrongFirstLetter'
+    }
+    
     // Check if word has already been guessed in this round (unless bypassing)
     if (!bypassDictionaryCheck && guessedWords.value.has(guess)) {
       isProcessingGuess.value = false
@@ -537,8 +543,8 @@ export const useGameStore = defineStore('game', () => {
         const oscillators = []
         const gainNodes = []
         
-        // Main melody (brass)
-        for (let i = 0; i < 3; i++) {
+        // Orchestral ensemble with 5 layers
+        for (let i = 0; i < 5; i++) {
           const osc = ctx.createOscillator()
           const gain = ctx.createGain()
           
@@ -546,35 +552,51 @@ export const useGameStore = defineStore('game', () => {
           gain.connect(ctx.destination)
           
           const freq = midiToFreq(note.midi)
+          const noteDuration = note.duration / 1000
           
           if (i === 0) {
-            // Main voice
+            // Brass (main voice)
             osc.frequency.value = freq
             osc.type = 'sawtooth'
             gain.gain.setValueAtTime(0, currentTime)
-            gain.gain.linearRampToValueAtTime(0.15, currentTime + 0.01)
-            gain.gain.linearRampToValueAtTime(0.12, currentTime + (note.duration / 1000) * 0.8)
-            gain.gain.exponentialRampToValueAtTime(0.01, currentTime + (note.duration / 1000))
+            gain.gain.linearRampToValueAtTime(0.05, currentTime + 0.01)
+            gain.gain.linearRampToValueAtTime(0.04, currentTime + noteDuration * 0.8)
+            gain.gain.exponentialRampToValueAtTime(0.01, currentTime + noteDuration)
           } else if (i === 1) {
-            // Octave below for richness
+            // Strings (octave below)
             osc.frequency.value = freq / 2
             osc.type = 'triangle'
             gain.gain.setValueAtTime(0, currentTime)
-            gain.gain.linearRampToValueAtTime(0.08, currentTime + 0.01)
-            gain.gain.linearRampToValueAtTime(0.06, currentTime + (note.duration / 1000) * 0.8)
-            gain.gain.exponentialRampToValueAtTime(0.01, currentTime + (note.duration / 1000))
-          } else {
-            // Fifth harmonic for orchestral fullness
+            gain.gain.linearRampToValueAtTime(0.025, currentTime + 0.02) // Slower attack for strings
+            gain.gain.linearRampToValueAtTime(0.022, currentTime + noteDuration * 0.9)
+            gain.gain.exponentialRampToValueAtTime(0.01, currentTime + noteDuration)
+          } else if (i === 2) {
+            // Harmonic overtone (fifth above)
             osc.frequency.value = freq * 1.5
             osc.type = 'sine'
             gain.gain.setValueAtTime(0, currentTime)
-            gain.gain.linearRampToValueAtTime(0.05, currentTime + 0.01)
-            gain.gain.linearRampToValueAtTime(0.04, currentTime + (note.duration / 1000) * 0.8)
-            gain.gain.exponentialRampToValueAtTime(0.01, currentTime + (note.duration / 1000))
+            gain.gain.linearRampToValueAtTime(0.02, currentTime + 0.01)
+            gain.gain.linearRampToValueAtTime(0.017, currentTime + noteDuration * 0.8)
+            gain.gain.exponentialRampToValueAtTime(0.01, currentTime + noteDuration)
+          } else if (i === 3) {
+            // Timpani/bass (two octaves below)
+            osc.frequency.value = freq / 4
+            osc.type = 'sine'
+            gain.gain.setValueAtTime(0, currentTime)
+            gain.gain.linearRampToValueAtTime(0.03, currentTime + 0.005) // Very quick attack
+            gain.gain.exponentialRampToValueAtTime(0.01, currentTime + noteDuration * 0.6) // Quick decay
+          } else {
+            // Shimmer (third harmonic)
+            osc.frequency.value = freq * 2
+            osc.type = 'sine'
+            gain.gain.setValueAtTime(0, currentTime)
+            gain.gain.linearRampToValueAtTime(0.015, currentTime + 0.015)
+            gain.gain.linearRampToValueAtTime(0.012, currentTime + noteDuration * 0.8)
+            gain.gain.exponentialRampToValueAtTime(0.01, currentTime + noteDuration)
           }
           
           osc.start(currentTime)
-          osc.stop(currentTime + (note.duration / 1000))
+          osc.stop(currentTime + noteDuration)
           
           oscillators.push(osc)
           gainNodes.push(gain)
@@ -643,8 +665,8 @@ export const useGameStore = defineStore('game', () => {
       const now = ctx.currentTime
       
       gainNode.gain.setValueAtTime(0, now)
-      gainNode.gain.linearRampToValueAtTime(0.15, now + 0.01) // Quick attack - softer
-      gainNode.gain.setValueAtTime(0.15, now + duration - 0.05) // Hold - softer
+      gainNode.gain.linearRampToValueAtTime(0.08, now + 0.01) // Quick attack - much softer
+      gainNode.gain.setValueAtTime(0.08, now + duration - 0.05) // Hold - much softer
       gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration) // Release
       
       oscillator.start(now)

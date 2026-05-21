@@ -20,10 +20,15 @@
 
     <div v-if="invalidWordDialog" class="invalid-word-dialog">
       <div class="dialog-content">
-        <h3>{{ duplicateWord ? 'Woord al geraden' : 'Onbekend woord' }}</h3>
-        <p v-if="duplicateWord">Het woord "{{ currentInvalidWord }}" is al eerder geraden in deze ronde.</p>
+        <h3 v-if="wrongFirstLetter">Verkeerde eerste letter</h3>
+        <h3 v-else-if="duplicateWord">Woord al geraden</h3>
+        <h3 v-else>Onbekend woord</h3>
+        
+        <p v-if="wrongFirstLetter">Het woord "{{ currentInvalidWord }}" begint niet met de juiste letter.</p>
+        <p v-else-if="duplicateWord">Het woord "{{ currentInvalidWord }}" is al eerder geraden in deze ronde.</p>
         <p v-else>Het woord "{{ currentInvalidWord }}" is niet in de woordenlijst.</p>
-        <div class="button-group" v-if="!duplicateWord">
+        
+        <div class="button-group" v-if="!duplicateWord && !wrongFirstLetter">
           <button @click="acceptInvalidWord" class="btn btn-primary" title="Druk op Enter">Accepteren</button>
           <button @click="rejectInvalidWord" class="btn btn-secondary" title="Druk op Escape">Weigeren</button>
         </div>
@@ -47,6 +52,7 @@ const showStartup = ref(true)
 const invalidWordDialog = ref(false)
 const currentInvalidWord = ref('')
 const duplicateWord = ref(false)
+const wrongFirstLetter = ref(false)
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
 
@@ -108,7 +114,7 @@ async function handleKeyPress(event) {
   if (invalidWordDialog.value) {
     if (event.key === 'Enter') {
       event.preventDefault()
-      if (duplicateWord.value) {
+      if (duplicateWord.value || wrongFirstLetter.value) {
         rejectInvalidWord()
       } else {
         acceptInvalidWord()
@@ -130,10 +136,17 @@ async function handleKeyPress(event) {
     if (result === 'invalid') {
       currentInvalidWord.value = gameStore.currentGuess
       duplicateWord.value = false
+      wrongFirstLetter.value = false
       invalidWordDialog.value = true
     } else if (result === 'duplicate') {
       currentInvalidWord.value = gameStore.currentGuess
       duplicateWord.value = true
+      wrongFirstLetter.value = false
+      invalidWordDialog.value = true
+    } else if (result === 'wrongFirstLetter') {
+      currentInvalidWord.value = gameStore.currentGuess
+      duplicateWord.value = false
+      wrongFirstLetter.value = true
       invalidWordDialog.value = true
     }
   } else if (event.key === 'Backspace') {

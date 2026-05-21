@@ -60,23 +60,25 @@ const gameStore = useGameStore()
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 2rem 2rem 2rem;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem 2rem 1rem;
   min-height: 100vh;
 }
 
 .lingo-title {
-  font-size: 48px;
+  font-size: 36px;
   font-weight: 900;
-  margin: 0;
+  margin: 0.5rem 0;
+  padding: 0.25rem 0;
   background: linear-gradient(to right, #FFD700, #FFA500, #FF8C00);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  filter: drop-shadow(3px 3px 10px rgba(0, 0, 0, 0.8));
+  filter: drop-shadow(2px 2px 8px rgba(0, 0, 0, 0.8));
   user-select: none;
   caret-color: transparent;
   letter-spacing: 0.1em;
+  line-height: 1.2;
 }
 
 .multiplayer-status {
