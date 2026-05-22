@@ -82,26 +82,8 @@ function focusMobileInput() {
 }
 
 function scrollToActiveRow() {
-  if (!gameGridRef.value) return
-  
-  const activeRow = gameGridRef.value.querySelector('.row:nth-child(' + (gameStore.currentRow + 1) + ')')
-  if (activeRow) {
-    // Use scrollIntoView with more aggressive positioning
-    activeRow.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
-    
-    // Additional scroll adjustment to ensure it's not covered by keyboard
-    setTimeout(() => {
-      if (activeRow) {
-        const rect = activeRow.getBoundingClientRect()
-        const viewportHeight = window.visualViewport?.height || window.innerHeight
-        
-        // If the row is in the bottom half of the visible viewport, scroll it up more
-        if (rect.top > viewportHeight / 2) {
-          window.scrollBy({ top: rect.top - viewportHeight / 3, behavior: 'smooth' })
-        }
-      }
-    }, 100)
-  }
+  // Disabled - keeping game at top with keyboard underneath
+  return
 }
 
 function handleMobileInput(event) {
@@ -134,8 +116,6 @@ function handleMobileKeydown(event) {
   if (event.key === 'Enter') {
     event.preventDefault()
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
-    // Scroll to next row after submission
-    setTimeout(() => scrollToActiveRow(), 100)
   }
 }
 
@@ -143,24 +123,13 @@ function handleViewportChange() {
   const currentHeight = window.visualViewport?.height || window.innerHeight
   const heightDifference = initialViewportHeight - currentHeight
   
-  // If viewport shrank by more than 150px, keyboard is probably visible
-  const wasKeyboardVisible = keyboardVisible
+  // Track keyboard state but don't trigger scrolling
   keyboardVisible = heightDifference > 150
-  
-  // When keyboard just appeared, scroll to active row after a delay
-  if (keyboardVisible && !wasKeyboardVisible) {
-    setTimeout(() => scrollToActiveRow(), 400)
-  } else if (keyboardVisible) {
-    // Keyboard is still visible, keep scrolling
-    setTimeout(() => scrollToActiveRow(), 100)
-  }
 }
 
-// Watch for changes in current row to scroll
+// Watch for changes in current row
 watch(() => gameStore.currentRow, () => {
-  if (keyboardVisible) {
-    nextTick(() => scrollToActiveRow())
-  }
+  // Disabled auto-scroll
 })
 
 onMounted(() => {
@@ -201,7 +170,9 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .game-container {
-    padding-bottom: 60vh; /* Extra space at bottom when keyboard is visible */
+    padding: 0.5rem;
+    gap: 0.25rem;
+    padding-bottom: 10vh; /* Reduced padding since no auto-scroll */
   }
 }
 
