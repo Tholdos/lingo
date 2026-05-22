@@ -83,8 +83,28 @@ function focusMobileInput() {
 }
 
 function scrollToActiveRow() {
-  // Disabled - keeping game at top with keyboard underneath
-  return
+  // Only scroll in landscape mode
+  if (window.innerHeight > 600 || window.matchMedia('(orientation: portrait)').matches) {
+    return
+  }
+  
+  // In landscape mode, scroll to keep current row visible
+  if (!gameGridRef.value) return
+  
+  nextTick(() => {
+    const rows = gameGridRef.value.querySelectorAll('.row')
+    const currentRowElement = rows[gameStore.currentRow]
+    
+    if (currentRowElement && gameGridRef.value) {
+      // Calculate the offset to scroll the grid
+      const rowHeight = currentRowElement.offsetHeight
+      const scrollOffset = gameStore.currentRow * (rowHeight + 4) // 4px for gap
+      
+      // Scroll the grid container smoothly
+      gameGridRef.value.style.transform = `translateY(-${scrollOffset}px)`
+      gameGridRef.value.style.transition = 'transform 0.3s ease'
+    }
+  })
 }
 
 function handleMobileInput(event) {
@@ -139,7 +159,8 @@ function handleViewportChange() {
 
 // Watch for changes in current row
 watch(() => gameStore.currentRow, () => {
-  // Disabled auto-scroll
+  // Scroll to active row in landscape mode
+  scrollToActiveRow()
 })
 
 onMounted(() => {

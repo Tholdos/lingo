@@ -37,6 +37,35 @@ export const useGameStore = defineStore('game', () => {
   const isConnected = ref(false)
   const waitingForPlayer = ref(false)
 
+  // Preload audio files for smoother playback
+  const audioCache = {
+    correct: null,
+    wrongPosition: null,
+    incorrect: null
+  }
+  
+  // Preload audio files
+  function preloadAudio() {
+    try {
+      audioCache.correct = new Audio('/sounds/correct.mp3')
+      audioCache.correct.volume = 0.3
+      audioCache.correct.load()
+      
+      audioCache.wrongPosition = new Audio('/sounds/wrongPosition.mp3')
+      audioCache.wrongPosition.volume = 0.3
+      audioCache.wrongPosition.load()
+      
+      audioCache.incorrect = new Audio('/sounds/incorrect.mp3')
+      audioCache.incorrect.volume = 0.3
+      audioCache.incorrect.load()
+    } catch (e) {
+      // Silently fail if preloading is not supported
+    }
+  }
+  
+  // Call preload on store initialization
+  preloadAudio()
+
   // Computed
   const currentGuess = computed(() => {
     if (currentRow.value >= cells.value.length) return ''
@@ -501,29 +530,34 @@ export const useGameStore = defineStore('game', () => {
   
   function playLetterSound(letterState) {
     try {
-      let audioFile = ''
+      let audio = null
       
-      // Select audio file based on letter state
+      // Select audio from cache based on letter state
       switch (letterState) {
         case LetterState.Correct:
-          audioFile = '/sounds/correct.mp3'
+          audio = audioCache.correct
           break
         case LetterState.WrongPosition:
-          audioFile = '/sounds/wrongPosition.mp3'
+          audio = audioCache.wrongPosition
           break
         case LetterState.Incorrect:
-          audioFile = '/sounds/incorrect.mp3'
+          audio = audioCache.incorrect
           break
         default:
-          audioFile = '/sounds/incorrect.mp3'
+          audio = audioCache.incorrect
       }
       
-      const audio = new Audio(audioFile)
-      audio.volume = 0.3
-      audio.play().catch(() => {
-        // If audio file fails, try synthesized fallback
+      if (audio) {
+        // Clone and play the preloaded audio
+        const audioClone = audio.cloneNode()
+        audioClone.volume = 0.3
+        audioClone.play().catch(() => {
+          // If audio file fails, try synthesized fallback
+          playSynthesizedLetterSound(letterState)
+        })
+      } else {
         playSynthesizedLetterSound(letterState)
-      })
+      }
     } catch (e) {
       // Fall back to synthesized sound
       playSynthesizedLetterSound(letterState)
