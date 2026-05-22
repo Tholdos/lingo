@@ -78,8 +78,6 @@ let initialViewportHeight = window.innerHeight
 function focusMobileInput() {
   if (gameStore.gameStarted && mobileInput.value) {
     mobileInput.value.focus()
-    // Scroll the active row into view after keyboard appears
-    setTimeout(() => scrollToActiveRow(), 300)
   }
 }
 
@@ -88,7 +86,21 @@ function scrollToActiveRow() {
   
   const activeRow = gameGridRef.value.querySelector('.row:nth-child(' + (gameStore.currentRow + 1) + ')')
   if (activeRow) {
-    activeRow.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // Use scrollIntoView with more aggressive positioning
+    activeRow.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
+    
+    // Additional scroll adjustment to ensure it's not covered by keyboard
+    setTimeout(() => {
+      if (activeRow) {
+        const rect = activeRow.getBoundingClientRect()
+        const viewportHeight = window.visualViewport?.height || window.innerHeight
+        
+        // If the row is in the bottom half of the visible viewport, scroll it up more
+        if (rect.top > viewportHeight / 2) {
+          window.scrollBy({ top: rect.top - viewportHeight / 3, behavior: 'smooth' })
+        }
+      }
+    }, 100)
   }
 }
 
@@ -132,10 +144,15 @@ function handleViewportChange() {
   const heightDifference = initialViewportHeight - currentHeight
   
   // If viewport shrank by more than 150px, keyboard is probably visible
+  const wasKeyboardVisible = keyboardVisible
   keyboardVisible = heightDifference > 150
   
-  if (keyboardVisible) {
-    scrollToActiveRow()
+  // When keyboard just appeared, scroll to active row after a delay
+  if (keyboardVisible && !wasKeyboardVisible) {
+    setTimeout(() => scrollToActiveRow(), 400)
+  } else if (keyboardVisible) {
+    // Keyboard is still visible, keep scrolling
+    setTimeout(() => scrollToActiveRow(), 100)
   }
 }
 
@@ -249,6 +266,20 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .players-panel {
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .players-panel {
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+  }
 }
 
 .game-grid {
@@ -275,11 +306,6 @@ onUnmounted(() => {
   .game-container {
     padding: 0.5rem;
     gap: 0.25rem;
-  }
-  
-  .players-panel {
-    gap: 1rem;
-    font-size: 0.9rem;
   }
   
   .game-grid {

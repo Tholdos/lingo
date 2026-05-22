@@ -27,6 +27,23 @@ defineProps({
   outline: none;
 }
 
+@media (max-width: 768px) {
+  .player-panel {
+    padding: 0.75rem 1rem;
+    min-width: 140px;
+    border-width: 2px;
+  }
+}
+
+@media (max-width: 480px) {
+  .player-panel {
+    padding: 0.5rem 0.75rem;
+    min-width: 110px;
+    flex: 1;
+    max-width: 45%;
+  }
+}
+
 .player-panel * {
   user-select: none;
   cursor: default;
@@ -52,11 +69,36 @@ defineProps({
   caret-color: transparent;
 }
 
+@media (max-width: 768px) {
+  .player-name {
+    font-size: 1.1rem;
+    margin: 0 0 0.25rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .player-name {
+    font-size: 0.95rem;
+  }
+}
+
 .player-score {
   font-size: 1.25rem;
   color: #fbbf24;
   font-weight: 600;
   user-select: none;
   caret-color: transparent;
+}
+
+@media (max-width: 768px) {
+  .player-score {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .player-score {
+    font-size: 0.9rem;
+  }
 }
 </style>

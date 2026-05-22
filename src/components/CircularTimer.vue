@@ -85,4 +85,26 @@ const dashOffset = computed(() => {
   user-select: none;
   caret-color: transparent;
 }
+
+@media (max-width: 768px) {
+  .timer-container {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .timer-text {
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .timer-container {
+    width: 55px;
+    height: 55px;
+  }
+  
+  .timer-text {
+    font-size: 1.1rem;
+  }
+}
 </style>
