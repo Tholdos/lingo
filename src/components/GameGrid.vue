@@ -31,6 +31,7 @@
         :is-active="gameStore.activePlayer === 1"
       />
       <CircularTimer 
+        v-if="gameStore.showGrid"
         :time-remaining="gameStore.timeRemaining"
         :is-active="gameStore.isTimerActive"
       />
@@ -41,7 +42,7 @@
     </div>
     
     <!-- Game grid with dynamic sizing based on word length -->
-    <div class="game-grid" ref="gameGridRef" :class="'word-length-' + gameStore.wordLength">
+    <div v-if="gameStore.showGrid" class="game-grid" ref="gameGridRef" :class="'word-length-' + gameStore.wordLength">
       <div v-for="(row, rowIndex) in gameStore.cells" :key="rowIndex" class="row">
         <LetterCell 
           v-for="(cell, colIndex) in row" 
@@ -399,16 +400,18 @@ onUnmounted(() => {
   .players-panel > :nth-child(3) {
     grid-column: 3;
     grid-row: 2;
-    align-self: center;
+    align-self: start;
     justify-self: center;
+    margin-top: 0.5rem;
   }
   
   .game-grid {
     grid-column: 2;
     grid-row: 2;
-    align-self: center;
+    align-self: start;
     justify-self: center;
     gap: 0.25rem;
+    margin-top: 0.5rem;
   }
   
   .row {

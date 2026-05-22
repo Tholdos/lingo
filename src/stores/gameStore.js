@@ -23,6 +23,7 @@ export const useGameStore = defineStore('game', () => {
   const wordList = ref([])
   const checkWordList = ref([])
   const gameStarted = ref(false)
+  const showGrid = ref(false)
   const showOverlay = ref(false)
   const overlayMessage = ref('')
   const isProcessingGuess = ref(false)
@@ -99,7 +100,7 @@ export const useGameStore = defineStore('game', () => {
     
     // Keep currentColumn at 0 - player must overwrite the hint
     
-    gameStarted.value = true
+    showGrid.value = true
     startTimer()
 
     if (isMultiplayer.value && isHost.value) {
@@ -115,14 +116,16 @@ export const useGameStore = defineStore('game', () => {
     wordLength.value = settings.wordLength
     showHintLetters.value = settings.showHintLetters
     activePlayer.value = 1
+    gameStarted.value = true
+    showGrid.value = false
     
-    // Play intro tune if enabled, then start game
+    // Play intro tune if enabled, then start game after 15 seconds
     if (settings.playIntroTune) {
       playIntroTune()
-      // Wait for intro tune to finish (approximately 1.5 seconds)
+      // Wait 15 seconds before showing grid and starting word
       setTimeout(() => {
         startNewWord()
-      }, 1500)
+      }, 15000)
     } else {
       startNewWord()
     }
@@ -401,14 +404,16 @@ export const useGameStore = defineStore('game', () => {
     
     // Reveal bonus letter if hint letters are enabled
     if (showHintLetters.value) {
-      revealBonusLetter()
+      await revealBonusLetter()
     }
     
     copyHintsToNextRow()
+    
+    // Start timer after bonus letter is revealed
     startTimer()
   }
 
-  function revealBonusLetter() {
+  async function revealBonusLetter() {
     // Count how many positions are currently unrevealed
     const unrevealedCount = Array.from({ length: wordLength.value }, (_, i) => i)
       .filter(i => !revealedPositions.value.has(i)).length
@@ -422,9 +427,10 @@ export const useGameStore = defineStore('game', () => {
     for (let i = 0; i < wordLength.value - 1; i++) {
       if (!revealedPositions.value.has(i)) {
         revealedPositions.value.add(i)
+        // Play sound and reveal letter simultaneously
+        playBonusLetterSound()
         cells.value[currentRow.value][i].letter = targetWord.value[i]
         cells.value[currentRow.value][i].state = LetterState.Hint
-        playBonusLetterSound()
         return
       }
     }
@@ -953,6 +959,7 @@ export const useGameStore = defineStore('game', () => {
     wordList,
     checkWordList,
     gameStarted,
+    showGrid,
     showOverlay,
     overlayMessage,
     isMultiplayer,
