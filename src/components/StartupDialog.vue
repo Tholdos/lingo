@@ -1,16 +1,16 @@
 <template>
   <div class="dialog-overlay">
     <div class="dialog-content">
-      <h1 class="dialog-title">Lingo</h1>
+      <h1 class="dialog-title">LINGO</h1>
       
       <div class="form-group">
         <label>Speler 1:</label>
-        <input v-model="player1Name" type="text" placeholder="Speler 1" ref="player1Input" />
+        <input v-model="player1Name" type="text" placeholder="Speler 1" ref="player1Input" @focus="selectAll" />
       </div>
 
       <div class="form-group">
         <label>Speler 2:</label>
-        <input v-model="player2Name" type="text" placeholder="Speler 2" ref="player2Input" />
+        <input v-model="player2Name" type="text" placeholder="Speler 2" ref="player2Input" @focus="selectAll" />
       </div>
 
       <div class="form-group">
@@ -94,6 +94,10 @@ function handleKeyDown(event) {
   }
 }
 
+function selectAll(event) {
+  event.target.select()
+}
+
 function cleanup() {
   window.removeEventListener('keydown', handleKeyDown)
 }
@@ -171,11 +175,19 @@ onUnmounted(() => {
 
 .dialog-title {
   text-align: center;
-  color: #fbbf24;
-  font-size: 2.5rem;
+  font-size: 48px;
+  font-weight: 900;
   margin: 0 0 2rem 0;
+  padding: 0.25rem 0;
+  background: linear-gradient(to right, #FFD700, #FFA500, #FF8C00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(2px 2px 8px rgba(0, 0, 0, 0.8));
   user-select: none;
   caret-color: transparent;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
 }
 
 .form-group {
