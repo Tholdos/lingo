@@ -15,7 +15,7 @@
         :style="{ strokeDashoffset: dashOffset }"
       />
     </svg>
-    <div class="timer-text">{{ timeRemaining }}</div>
+    <div class="timer-text">{{ displayTime }}</div>
   </div>
 </template>
 
@@ -30,9 +30,15 @@ const props = defineProps({
 const maxTime = 15
 const circumference = 2 * Math.PI * 45
 
+// Round up the displayed time so it never shows 0 before timeout
+const displayTime = computed(() => {
+  return Math.ceil(props.timeRemaining)
+})
+
+// Changed to make timer go clockwise (use progress directly instead of 1-progress)
 const dashOffset = computed(() => {
   const progress = props.timeRemaining / maxTime
-  return circumference * (1 - progress)
+  return circumference * progress
 })
 </script>
 

@@ -173,8 +173,7 @@ onUnmounted(() => {
   gap: 0.5rem;
   padding: 1.5rem 1rem 2rem 1rem;
   min-height: 100vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: visible;
 }
 
 @media (max-width: 768px) {
@@ -267,7 +266,6 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 0.5rem;
   max-width: 100%;
-  overflow-x: auto;
 }
 
 /* Adjust gap for longer words */
