@@ -4,7 +4,7 @@ import { LetterState } from '@/types/game'
 import { io } from 'socket.io-client'
 
 const MAX_ATTEMPTS = 5
-const TIME_LIMIT_SECONDS = 15
+const TIME_LIMIT_SECONDS = 14
 
 export const useGameStore = defineStore('game', () => {
   // State

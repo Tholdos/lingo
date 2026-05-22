@@ -9,6 +9,7 @@
       />
       <circle
         class="timer-progress"
+        :class="{ animating: isActive }"
         cx="50"
         cy="50"
         r="45"
@@ -27,16 +28,12 @@ const props = defineProps({
   isActive: Boolean
 })
 
-const maxTime = 15
+const maxTime = 14
 const circumference = 2 * Math.PI * 45
 
-// Round up the displayed time so it never shows 0 before timeout
+// Add 1 to display so it shows 15-1 instead of 14-0
 const displayTime = computed(() => {
-  // Always show at least 1 when timer is active and has any time remaining
-  if (props.isActive && props.timeRemaining > 0) {
-    return Math.max(1, Math.ceil(props.timeRemaining))
-  }
-  return Math.ceil(props.timeRemaining)
+  return props.timeRemaining + 1
 })
 
 // Changed to make timer go clockwise (use progress directly instead of 1-progress)
@@ -80,6 +77,10 @@ const dashOffset = computed(() => {
   stroke-width: 8;
   stroke-linecap: round;
   stroke-dasharray: 282.7;
+  transition: none;
+}
+
+.timer-progress.animating {
   transition: stroke-dashoffset 1s linear;
 }
 
