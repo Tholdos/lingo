@@ -1,6 +1,20 @@
 <template>
-  <div class="game-container">
+  <div class="game-container" @click="focusMobileInput">
     <h1 class="lingo-title">LINGO</h1>
+    
+    <!-- Hidden input for mobile keyboard -->
+    <input 
+      ref="mobileInput"
+      class="mobile-input"
+      type="text"
+      inputmode="text"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="characters"
+      spellcheck="false"
+      @input="handleMobileInput"
+      @keydown="handleMobileKeydown"
+    />
     
     <div v-if="gameStore.isMultiplayer" class="multiplayer-status">
       <div v-if="gameStore.waitingForPlayer" class="waiting">
@@ -47,12 +61,59 @@
 </template>
 
 <script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import PlayerPanel from './PlayerPanel.vue'
 import LetterCell from './LetterCell.vue'
 import CircularTimer from './CircularTimer.vue'
 
 const gameStore = useGameStore()
+const mobileInput = ref(null)
+let lastInputValue = ''
+
+function focusMobileInput() {
+  if (gameStore.gameStarted && mobileInput.value) {
+    mobileInput.value.focus()
+  }
+}
+
+function handleMobileInput(event) {
+  const newValue = event.target.value.toUpperCase()
+  const oldValue = lastInputValue
+  
+  if (newValue.length > oldValue.length) {
+    // Letter added
+    const addedLetter = newValue[newValue.length - 1]
+    if (addedLetter.match(/^[A-Z]$/)) {
+      // Dispatch keyboard event for letter
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: addedLetter }))
+    }
+  } else if (newValue.length < oldValue.length) {
+    // Letter deleted
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }))
+  }
+  
+  lastInputValue = newValue
+  // Clear input to allow continuous typing
+  setTimeout(() => {
+    if (mobileInput.value) {
+      mobileInput.value.value = ''
+      lastInputValue = ''
+    }
+  }, 10)
+}
+
+function handleMobileKeydown(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
+  }
+}
+
+onMounted(() => {
+  // Auto-focus on mobile when game starts
+  setTimeout(() => focusMobileInput(), 500)
+})
 </script>
 
 <style scoped>
@@ -63,6 +124,15 @@ const gameStore = useGameStore()
   gap: 0.5rem;
   padding: 1.5rem 1rem 2rem 1rem;
   min-height: 100vh;
+}
+
+.mobile-input {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .lingo-title {
@@ -79,6 +149,13 @@ const gameStore = useGameStore()
   caret-color: transparent;
   letter-spacing: 0.1em;
   line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  .lingo-title {
+    font-size: 28px;
+    margin: 0.25rem 0;
+  }
 }
 
 .multiplayer-status {
@@ -130,5 +207,34 @@ const gameStore = useGameStore()
   text-align: center;
   user-select: none;
   caret-color: transparent;
+}
+
+@media (max-width: 768px) {
+  .game-container {
+    padding: 0.5rem;
+    gap: 0.25rem;
+  }
+  
+  .players-panel {
+    gap: 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .game-grid {
+    gap: 0.3rem;
+  }
+  
+  .row {
+    gap: 0.3rem;
+  }
+  
+  .multiplayer-status {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .status-message {
+    font-size: 1.1rem;
+  }
 }
 </style>

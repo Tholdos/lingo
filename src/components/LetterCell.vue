@@ -51,6 +51,21 @@ const stateClass = computed(() => {
   caret-color: transparent;
 }
 
+@media (max-width: 768px) {
+  .letter-cell {
+    width: 45px;
+    height: 45px;
+    border-width: 1.5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .letter-cell {
+    width: 38px;
+    height: 38px;
+  }
+}
+
 .letter-cell.active {
   border-color: #fbbf24;
   box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
@@ -69,6 +84,18 @@ const stateClass = computed(() => {
   text-transform: uppercase;
   pointer-events: none;
   caret-color: transparent;
+}
+
+@media (max-width: 768px) {
+  .letter-text {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .letter-text {
+    font-size: 20px;
+  }
 }
 
 .letter-cell.empty {
