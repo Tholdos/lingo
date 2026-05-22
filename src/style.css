@@ -54,6 +54,15 @@ body {
   margin: 0;
   user-select: none;
   caret-color: transparent;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+#app {
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 h1,

@@ -1,5 +1,5 @@
 <template>
-  <div class="game-container" @click="focusMobileInput">
+  <div class="game-container" ref="gameContainer" @click="focusMobileInput">
     <h1 class="lingo-title">LINGO</h1>
     
     <!-- Hidden input for mobile keyboard -->
@@ -41,7 +41,7 @@
     </div>
     
     <!-- THIS IS THE SECTION THAT CHANGED - REPLACE YOUR EXISTING game-grid div with this: -->
-    <div class="game-grid">
+    <div class="game-grid" ref="gameGridRef">
       <div v-for="(row, rowIndex) in gameStore.cells" :key="rowIndex" class="row">
         <LetterCell 
           v-for="(cell, colIndex) in row" 
@@ -61,7 +61,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import PlayerPanel from './PlayerPanel.vue'
 import LetterCell from './LetterCell.vue'
@@ -69,11 +69,26 @@ import CircularTimer from './CircularTimer.vue'
 
 const gameStore = useGameStore()
 const mobileInput = ref(null)
+const gameContainer = ref(null)
+const gameGridRef = ref(null)
 let lastInputValue = ''
+let keyboardVisible = false
+let initialViewportHeight = window.innerHeight
 
 function focusMobileInput() {
   if (gameStore.gameStarted && mobileInput.value) {
     mobileInput.value.focus()
+    // Scroll the active row into view after keyboard appears
+    setTimeout(() => scrollToActiveRow(), 300)
+  }
+}
+
+function scrollToActiveRow() {
+  if (!gameGridRef.value) return
+  
+  const activeRow = gameGridRef.value.querySelector('.row:nth-child(' + (gameStore.currentRow + 1) + ')')
+  if (activeRow) {
+    activeRow.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 }
 
@@ -107,12 +122,51 @@ function handleMobileKeydown(event) {
   if (event.key === 'Enter') {
     event.preventDefault()
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
+    // Scroll to next row after submission
+    setTimeout(() => scrollToActiveRow(), 100)
   }
 }
+
+function handleViewportChange() {
+  const currentHeight = window.visualViewport?.height || window.innerHeight
+  const heightDifference = initialViewportHeight - currentHeight
+  
+  // If viewport shrank by more than 150px, keyboard is probably visible
+  keyboardVisible = heightDifference > 150
+  
+  if (keyboardVisible) {
+    scrollToActiveRow()
+  }
+}
+
+// Watch for changes in current row to scroll
+watch(() => gameStore.currentRow, () => {
+  if (keyboardVisible) {
+    nextTick(() => scrollToActiveRow())
+  }
+})
 
 onMounted(() => {
   // Auto-focus on mobile when game starts
   setTimeout(() => focusMobileInput(), 500)
+  
+  // Listen for viewport changes (keyboard show/hide)
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', handleViewportChange)
+  } else {
+    window.addEventListener('resize', handleViewportChange)
+  }
+  
+  // Store initial viewport height
+  initialViewportHeight = window.visualViewport?.height || window.innerHeight
+})
+
+onUnmounted(() => {
+  if (window.visualViewport) {
+    window.visualViewport.removeEventListener('resize', handleViewportChange)
+  } else {
+    window.removeEventListener('resize', handleViewportChange)
+  }
 })
 </script>
 
@@ -124,6 +178,14 @@ onMounted(() => {
   gap: 0.5rem;
   padding: 1.5rem 1rem 2rem 1rem;
   min-height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .game-container {
+    padding-bottom: 60vh; /* Extra space at bottom when keyboard is visible */
+  }
 }
 
 .mobile-input {
