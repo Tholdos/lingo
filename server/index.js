@@ -18,7 +18,10 @@ const allowedOrigins = [
 
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: [
+      'http://localhost:5173',
+      'https://lingo-eta-vert.vercel.app'
+    ],
     methods: ['GET', 'POST']
   }
 })
