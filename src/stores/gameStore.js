@@ -1024,6 +1024,8 @@ export const useGameStore = defineStore('game', () => {
     createRoom,
     joinRoom,
     isMyTurn,
-    resetMultiplayer
+    resetMultiplayer,
+    stopTimer,
+    startTimer
   }
 })

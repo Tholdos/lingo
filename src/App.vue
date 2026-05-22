@@ -60,7 +60,8 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
 // Watch for invalid word dialog changes to blur mobile input
 watch(invalidWordDialog, (newValue) => {
   if (newValue) {
-    // Dialog opened - blur any active input to hide mobile keyboard
+    // Dialog opened - stop timer and blur any active input to hide mobile keyboard
+    gameStore.stopTimer()
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur()
     }
@@ -215,6 +216,8 @@ async function handleKeyPress(event) {
 async function acceptInvalidWord() {
   // Process the word as if it were valid
   invalidWordDialog.value = false
+  // Restart timer before processing
+  gameStore.startTimer()
   // Wait a tick to ensure dialog is closed before processing
   await new Promise(resolve => setTimeout(resolve, 10))
   await gameStore.submitGuess(true) // bypass dictionary check
@@ -222,6 +225,7 @@ async function acceptInvalidWord() {
 
 function rejectInvalidWord() {
   invalidWordDialog.value = false
+  // Don't restart timer - switchPlayer will handle it
   // Switch player
   gameStore.switchPlayer()
 }
