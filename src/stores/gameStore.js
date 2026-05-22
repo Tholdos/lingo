@@ -396,6 +396,9 @@ export const useGameStore = defineStore('game', () => {
     
     currentColumn.value = 0
     
+    // Add delay before revealing bonus letter (500ms after sound)
+    await sleep(500)
+    
     // Reveal bonus letter if hint letters are enabled
     if (showHintLetters.value) {
       revealBonusLetter()
