@@ -264,19 +264,19 @@ onUnmounted(() => {
 .game-grid {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
   max-width: 100%;
 }
 
 /* Adjust gap for longer words */
 .word-length-9 .row,
 .word-length-10 .row {
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .row {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   justify-content: center;
 }
 
@@ -285,16 +285,24 @@ onUnmounted(() => {
     gap: 0.3rem;
   }
   
+  .row {
+    gap: 0.3rem;
+  }
+  
   .word-length-9 .row,
   .word-length-10 .row {
-    gap: 0.3rem;
+    gap: 0.25rem;
   }
 }
 
 @media (max-width: 480px) {
+  .game-grid {
+    gap: 0.25rem;
+  }
+  
   .word-length-9 .row,
   .word-length-10 .row {
-    gap: 0.25rem;
+    gap: 0.2rem;
   }
 }
 

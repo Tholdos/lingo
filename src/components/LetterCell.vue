@@ -36,8 +36,8 @@ const stateClass = computed(() => {
 
 <style scoped>
 .letter-cell {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -54,69 +54,83 @@ const stateClass = computed(() => {
 
 /* Word length specific sizing */
 .word-length-5 .letter-cell,
-.word-length-6 .letter-cell,
+.word-length-6 .letter-cell {
+  width: 50px;
+  height: 50px;
+}
+
 .word-length-7 .letter-cell {
-  width: 60px;
-  height: 60px;
+  width: 48px;
+  height: 48px;
 }
 
 .word-length-8 .letter-cell {
-  width: 52px;
-  height: 52px;
+  width: 45px;
+  height: 45px;
 }
 
 .word-length-9 .letter-cell {
-  width: 46px;
-  height: 46px;
-}
-
-.word-length-10 .letter-cell {
   width: 42px;
   height: 42px;
 }
 
+.word-length-10 .letter-cell {
+  width: 38px;
+  height: 38px;
+}
+
 @media (max-width: 768px) {
   .letter-cell {
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
     border-width: 1.5px;
   }
   
-  .word-length-8 .letter-cell {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .word-length-9 .letter-cell {
-    width: 36px;
-    height: 36px;
-  }
-  
-  .word-length-10 .letter-cell {
-    width: 33px;
-    height: 33px;
-  }
-}
-
-@media (max-width: 480px) {
-  .letter-cell {
+  .word-length-7 .letter-cell {
     width: 38px;
     height: 38px;
   }
   
   .word-length-8 .letter-cell {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
   }
   
   .word-length-9 .letter-cell {
-    width: 30px;
-    height: 30px;
+    width: 33px;
+    height: 33px;
   }
   
   .word-length-10 .letter-cell {
-    width: 27px;
-    height: 27px;
+    width: 30px;
+    height: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .letter-cell {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .word-length-7 .letter-cell {
+    width: 33px;
+    height: 33px;
+  }
+  
+  .word-length-8 .letter-cell {
+    width: 31px;
+    height: 31px;
+  }
+  
+  .word-length-9 .letter-cell {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .word-length-10 .letter-cell {
+    width: 26px;
+    height: 26px;
   }
 }
 
@@ -132,7 +146,7 @@ const stateClass = computed(() => {
 }
 
 .letter-text {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: bold;
   color: white;
   text-transform: uppercase;
@@ -141,47 +155,59 @@ const stateClass = computed(() => {
 }
 
 /* Font size adjustments for longer words */
-.word-length-8 .letter-text {
-  font-size: 28px;
+.word-length-7 .letter-text {
+  font-size: 26px;
 }
 
-.word-length-9 .letter-text {
+.word-length-8 .letter-text {
   font-size: 24px;
 }
 
-.word-length-10 .letter-text {
+.word-length-9 .letter-text {
   font-size: 22px;
+}
+
+.word-length-10 .letter-text {
+  font-size: 20px;
 }
 
 @media (max-width: 768px) {
   .letter-text {
-    font-size: 24px;
-  }
-  
-  .word-length-8 .letter-text {
     font-size: 22px;
   }
   
-  .word-length-9 .letter-text {
+  .word-length-7 .letter-text {
+    font-size: 20px;
+  }
+  
+  .word-length-8 .letter-text {
     font-size: 19px;
   }
   
-  .word-length-10 .letter-text {
+  .word-length-9 .letter-text {
     font-size: 17px;
+  }
+  
+  .word-length-10 .letter-text {
+    font-size: 16px;
   }
 }
 
 @media (max-width: 480px) {
   .letter-text {
-    font-size: 20px;
+    font-size: 19px;
   }
   
-  .word-length-8 .letter-text {
+  .word-length-7 .letter-text {
     font-size: 18px;
   }
   
+  .word-length-8 .letter-text {
+    font-size: 17px;
+  }
+  
   .word-length-9 .letter-text {
-    font-size: 16px;
+    font-size: 15px;
   }
   
   .word-length-10 .letter-text {

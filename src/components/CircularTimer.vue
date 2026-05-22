@@ -32,6 +32,10 @@ const circumference = 2 * Math.PI * 45
 
 // Round up the displayed time so it never shows 0 before timeout
 const displayTime = computed(() => {
+  // Always show at least 1 when timer is active and has any time remaining
+  if (props.isActive && props.timeRemaining > 0) {
+    return Math.max(1, Math.ceil(props.timeRemaining))
+  }
   return Math.ceil(props.timeRemaining)
 })
 
