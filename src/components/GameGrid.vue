@@ -115,7 +115,16 @@ function handleMobileInput(event) {
 function handleMobileKeydown(event) {
   if (event.key === 'Enter') {
     event.preventDefault()
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
+    // Create a more complete keyboard event
+    const enterEvent = new KeyboardEvent('keydown', { 
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      which: 13,
+      bubbles: true,
+      cancelable: true
+    })
+    window.dispatchEvent(enterEvent)
   }
 }
 

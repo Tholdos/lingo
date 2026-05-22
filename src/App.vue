@@ -74,7 +74,7 @@ onMounted(async () => {
   window.addEventListener('keydown', handleKeyPress)
 })
 
-function handleStart(settings: { player1Name: string, player2Name: string, wordLength: number, showHintLetters: boolean }) {
+function handleStart(settings: { player1Name: string, player2Name: string, wordLength: number, showHintLetters: boolean, playIntroTune: boolean }) {
   gameStore.startGame(settings)
 }
 

@@ -29,6 +29,10 @@
         <label><input type="checkbox" v-model="showHintLetters" /> Bonusletter weergeven bij beurtverlies</label>
       </div>
 
+      <div class="form-group">
+        <label><input type="checkbox" v-model="playIntroTune" /> Intro afspelen</label>
+      </div>
+
       <div class="button-group">
         <button @click="handleStartGame" class="btn btn-primary" title="Druk op Enter">Start spel</button>
       </div>
@@ -59,6 +63,7 @@ const player1Name = ref('Speler 1')
 const player2Name = ref('Speler 2')
 const wordLength = ref(6)
 const showHintLetters = ref(true)
+const playIntroTune = ref(true)
 const showJoinDialog = ref(false)
 const joinCode = ref('')
 const player1Input = ref(null)
@@ -74,6 +79,7 @@ onMounted(() => {
       if (settings.player2Name) player2Name.value = settings.player2Name
       if (settings.wordLength) wordLength.value = settings.wordLength
       if (settings.showHintLetters !== undefined) showHintLetters.value = settings.showHintLetters
+      if (settings.playIntroTune !== undefined) playIntroTune.value = settings.playIntroTune
     } catch (e) {
       console.error('Failed to load saved settings:', e)
     }
@@ -107,7 +113,8 @@ function handleStartGame() {
     player1Name: player1Name.value || 'Speler 1',
     player2Name: player2Name.value || 'Speler 2',
     wordLength: wordLength.value,
-    showHintLetters: showHintLetters.value
+    showHintLetters: showHintLetters.value,
+    playIntroTune: playIntroTune.value
   }
   
   // Save settings to localStorage

@@ -116,10 +116,16 @@ export const useGameStore = defineStore('game', () => {
     showHintLetters.value = settings.showHintLetters
     activePlayer.value = 1
     
-    // Play intro tune
-    playIntroTune()
-    
-    startNewWord()
+    // Play intro tune if enabled, then start game
+    if (settings.playIntroTune) {
+      playIntroTune()
+      // Wait for intro tune to finish (approximately 1.5 seconds)
+      setTimeout(() => {
+        startNewWord()
+      }, 1500)
+    } else {
+      startNewWord()
+    }
   }
 
   function addLetter(letter) {
@@ -279,7 +285,7 @@ export const useGameStore = defineStore('game', () => {
     for (let i = 0; i < wordLength.value; i++) {
       row[i].state = finalStates[i]
       playLetterSound(finalStates[i])
-      await sleep(200)
+      await sleep(300)
     }
     
     // Check if won
