@@ -338,4 +338,43 @@ onUnmounted(() => {
     font-size: 1.1rem;
   }
 }
+
+/* Landscape orientation on mobile - more compact layout */
+@media (max-height: 600px) and (orientation: landscape) {
+  .game-container {
+    padding: 0.25rem;
+    gap: 0.15rem;
+  }
+  
+  .lingo-title {
+    font-size: 20px;
+    margin: 0.15rem 0;
+  }
+  
+  .players-panel {
+    gap: 0.4rem;
+  }
+  
+  .game-grid {
+    gap: 0.2rem;
+  }
+  
+  .row {
+    gap: 0.2rem;
+  }
+  
+  .word-length-9 .row,
+  .word-length-10 .row {
+    gap: 0.15rem;
+  }
+  
+  .multiplayer-status {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .status-message {
+    font-size: 0.9rem;
+  }
+}
 </style>

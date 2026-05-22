@@ -246,4 +246,59 @@ const stateClass = computed(() => {
   background-color: #2563eb;
   border-color: #fbbf24;
 }
+
+/* Landscape orientation on mobile - make cells smaller to fit */
+@media (max-height: 600px) and (orientation: landscape) {
+  .letter-cell {
+    width: 28px;
+    height: 28px;
+    border-width: 1px;
+  }
+  
+  .word-length-5 .letter-cell,
+  .word-length-6 .letter-cell {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .word-length-7 .letter-cell {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .word-length-8 .letter-cell {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .word-length-9 .letter-cell {
+    width: 26px;
+    height: 26px;
+  }
+  
+  .word-length-10 .letter-cell {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .letter-text {
+    font-size: 16px;
+  }
+  
+  .word-length-7 .letter-text {
+    font-size: 17px;
+  }
+  
+  .word-length-8 .letter-text {
+    font-size: 16px;
+  }
+  
+  .word-length-9 .letter-text {
+    font-size: 14px;
+  }
+  
+  .word-length-10 .letter-text {
+    font-size: 13px;
+  }
+}
 </style>

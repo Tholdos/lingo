@@ -118,4 +118,21 @@ const dashOffset = computed(() => {
     font-size: 1.1rem;
   }
 }
+
+/* Landscape orientation - smaller timer */
+@media (max-height: 600px) and (orientation: landscape) {
+  .timer-container {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .timer-text {
+    font-size: 0.9rem;
+  }
+  
+  .timer-background,
+  .timer-progress {
+    stroke-width: 6;
+  }
+}
 </style>

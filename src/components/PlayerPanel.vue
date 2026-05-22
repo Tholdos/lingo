@@ -101,4 +101,21 @@ defineProps({
     font-size: 0.9rem;
   }
 }
+
+/* Landscape orientation - more compact */
+@media (max-height: 600px) and (orientation: landscape) {
+  .player-panel {
+    padding: 0.3rem 0.5rem;
+    min-width: 80px;
+  }
+  
+  .player-name {
+    font-size: 0.8rem;
+    margin: 0 0 0.1rem 0;
+  }
+  
+  .player-score {
+    font-size: 0.75rem;
+  }
+}
 </style>
