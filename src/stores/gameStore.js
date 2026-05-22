@@ -361,6 +361,9 @@ export const useGameStore = defineStore('game', () => {
       playTurnSwitchSound()
     }
     
+    // Also play turn-over sound
+    playTurnOverSound()
+    
     activePlayer.value = activePlayer.value === 1 ? 2 : 1
     
     // Move to next row
@@ -527,11 +530,11 @@ export const useGameStore = defineStore('game', () => {
   function playVictoryTune() {
     try {
       // Try to play audio file first (mp3 or wav)
-      const audio = new Audio('/victory.mp3')
+      const audio = new Audio('/sounds/victory.mp3')
       audio.volume = 0.5
       audio.play().catch(() => {
         // If mp3 fails, try wav
-        const audioWav = new Audio('/victory.wav')
+        const audioWav = new Audio('/sounds/victory.wav')
         audioWav.volume = 0.5
         audioWav.play().catch(() => {
           // If both fail, fall back to synthesized tune
@@ -702,11 +705,11 @@ export const useGameStore = defineStore('game', () => {
   function playIntroTune() {
     try {
       // Try to play audio file first (mp3 or wav)
-      const audio = new Audio('/intro.mp3')
+      const audio = new Audio('/sounds/intro.mp3')
       audio.volume = 0.5
       audio.play().catch(() => {
         // If mp3 fails, try wav
-        const audioWav = new Audio('/intro.wav')
+        const audioWav = new Audio('/sounds/intro.wav')
         audioWav.volume = 0.5
         audioWav.play().catch(() => {
           // If both fail, fall back to synthesized tune
@@ -758,6 +761,24 @@ export const useGameStore = defineStore('game', () => {
       })
     } catch (e) {
       // Silently fail if audio context is not available
+    }
+  }
+
+  function playTurnOverSound() {
+    try {
+      // Try to play audio file first (mp3 or wav)
+      const audio = new Audio('/sounds/turnOver.mp3')
+      audio.volume = 0.4
+      audio.play().catch(() => {
+        // If mp3 fails, try wav
+        const audioWav = new Audio('/sounds/turnOver.wav')
+        audioWav.volume = 0.4
+        audioWav.play().catch(() => {
+          // If both fail, silently continue (no synthesized fallback for turn-over)
+        })
+      })
+    } catch (e) {
+      // Silently fail
     }
   }
 
