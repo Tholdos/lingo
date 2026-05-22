@@ -339,24 +339,72 @@ onUnmounted(() => {
   }
 }
 
-/* Landscape orientation on mobile - more compact layout */
+/* Landscape orientation on mobile - side-by-side layout */
 @media (max-height: 600px) and (orientation: landscape) {
   .game-container {
+    display: grid;
+    grid-template-columns: minmax(85px, auto) 1fr minmax(85px, auto);
+    grid-template-rows: auto auto 1fr auto;
+    gap: 0.3rem 0.5rem;
     padding: 0.25rem;
-    gap: 0.15rem;
+    align-items: start;
   }
   
   .lingo-title {
-    font-size: 20px;
-    margin: 0.15rem 0;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    font-size: 18px;
+    margin: 0.1rem 0;
+  }
+  
+  .mobile-input {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  
+  .multiplayer-status {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
   }
   
   .players-panel {
-    gap: 0.4rem;
+    grid-column: 1 / -1;
+    grid-row: 3;
+    display: contents; /* Makes children act as direct grid items */
+  }
+  
+  /* Player 1 on the left */
+  .players-panel > :nth-child(1) {
+    grid-column: 1;
+    grid-row: 3;
+    align-self: center;
+  }
+  
+  /* Timer in center top */
+  .players-panel > :nth-child(2) {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: center;
+    align-self: start;
+    margin-top: 0.5rem;
+  }
+  
+  /* Player 2 on the right */
+  .players-panel > :nth-child(3) {
+    grid-column: 3;
+    grid-row: 3;
+    align-self: center;
   }
   
   .game-grid {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: center;
+    justify-self: center;
     gap: 0.2rem;
+    margin-top: 2.5rem; /* Space for timer above */
   }
   
   .row {
@@ -368,13 +416,10 @@ onUnmounted(() => {
     gap: 0.15rem;
   }
   
-  .multiplayer-status {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
-  }
-  
   .status-message {
-    font-size: 0.9rem;
+    grid-column: 1 / -1;
+    grid-row: 4;
+    font-size: 0.85rem;
   }
 }
 </style>
