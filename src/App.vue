@@ -69,9 +69,12 @@ watch(invalidWordDialog, (newValue) => {
 onMounted(async () => {
   // Load word lists
   try {
+    console.log('Loading word lists...')
     const smallWords = await fetch('/wordlists/words_small.txt').then(r => r.text())
     const bigWords = await fetch('/wordlists/words_big.txt').then(r => r.text())
+    console.log('Word lists loaded - small:', smallWords.split('\n').length, 'big:', bigWords.split('\n').length)
     gameStore.loadWords(smallWords, bigWords)
+    console.log('Words loaded into store')
   } catch (error) {
     console.error('Failed to load word lists:', error)
     alert('Fout bij het laden van woordenlijsten. Controleer of de bestanden bestaan.')
@@ -142,22 +145,27 @@ async function handleKeyPress(event) {
 
   if (event.key === 'Enter') {
     event.preventDefault()
+    console.log('Enter pressed - submitting guess')
     const result = await gameStore.submitGuess()
+    console.log('Submit result:', result)
     if (result === 'invalid') {
       currentInvalidWord.value = gameStore.currentGuess
       duplicateWord.value = false
       wrongFirstLetter.value = false
       invalidWordDialog.value = true
+      console.log('Showing invalid word dialog')
     } else if (result === 'duplicate') {
       currentInvalidWord.value = gameStore.currentGuess
       duplicateWord.value = true
       wrongFirstLetter.value = false
       invalidWordDialog.value = true
+      console.log('Showing duplicate word dialog')
     } else if (result === 'wrongFirstLetter') {
       currentInvalidWord.value = gameStore.currentGuess
       duplicateWord.value = false
       wrongFirstLetter.value = true
       invalidWordDialog.value = true
+      console.log('Showing wrong first letter dialog')
     }
   } else if (event.key === 'Backspace') {
     event.preventDefault()

@@ -225,23 +225,35 @@ export const useGameStore = defineStore('game', () => {
 
     isProcessingGuess.value = true
     
+    // Debug logging
+    console.log('Submitting guess:', guess)
+    console.log('Target word:', targetWord.value)
+    console.log('Check word list size:', checkWordList.value.length)
+    console.log('Word in dictionary?', checkWordList.value.includes(guess))
+    console.log('Bypass check?', bypassDictionaryCheck)
+    
     // Check if word starts with the correct first letter (which is always revealed)
     if (!bypassDictionaryCheck && guess[0] !== targetWord.value[0]) {
+      console.log('Failed: wrong first letter')
       isProcessingGuess.value = false
       return 'wrongFirstLetter'
     }
     
     // Check if word has already been guessed in this round (unless bypassing)
     if (!bypassDictionaryCheck && guessedWords.value.has(guess)) {
+      console.log('Failed: duplicate word')
       isProcessingGuess.value = false
       return 'duplicate'
     }
     
     // Check if word exists in dictionary (unless bypassed)
     if (!bypassDictionaryCheck && !checkWordList.value.includes(guess)) {
+      console.log('Failed: word not in dictionary')
       isProcessingGuess.value = false
       return 'invalid'
     }
+    
+    console.log('Validation passed!')
     
     // Add to guessed words only after validation passes or is bypassed
     guessedWords.value.add(guess)
