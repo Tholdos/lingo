@@ -285,7 +285,7 @@ export const useGameStore = defineStore('game', () => {
     for (let i = 0; i < wordLength.value; i++) {
       row[i].state = finalStates[i]
       playLetterSound(finalStates[i])
-      await sleep(300)
+      await sleep(250)
     }
     
     // Check if won

@@ -29,11 +29,11 @@
         <p v-else>Het woord "{{ currentInvalidWord }}" is niet in de woordenlijst.</p>
         
         <div class="button-group" v-if="!duplicateWord && !wrongFirstLetter">
-          <button @click="acceptInvalidWord" class="btn btn-primary" title="Druk op Enter">Accepteren</button>
-          <button @click="rejectInvalidWord" class="btn btn-secondary" title="Druk op Escape">Weigeren</button>
+          <button @click="acceptInvalidWord" @touchend.prevent="acceptInvalidWord" class="btn btn-primary" title="Druk op Enter">Accepteren</button>
+          <button @click="rejectInvalidWord" @touchend.prevent="rejectInvalidWord" class="btn btn-secondary" title="Druk op Escape">Weigeren</button>
         </div>
         <div class="button-group" v-else>
-          <button @click="rejectInvalidWord" class="btn btn-primary" title="Druk op Enter">OK</button>
+          <button @click="rejectInvalidWord" @touchend.prevent="rejectInvalidWord" class="btn btn-primary" title="Druk op Enter">OK</button>
         </div>
       </div>
     </div>
@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useGameStore } from '@/stores/gameStore'
 import StartupDialog from '@/components/StartupDialog.vue'
 import GameGrid from '@/components/GameGrid.vue'
@@ -55,6 +55,16 @@ const duplicateWord = ref(false)
 const wrongFirstLetter = ref(false)
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
+
+// Watch for invalid word dialog changes to blur mobile input
+watch(invalidWordDialog, (newValue) => {
+  if (newValue) {
+    // Dialog opened - blur any active input to hide mobile keyboard
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+  }
+})
 
 onMounted(async () => {
   // Load word lists
@@ -226,6 +236,7 @@ body {
   z-index: 3000;
   user-select: none;
   caret-color: transparent;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .invalid-word-dialog .dialog-content {
@@ -236,6 +247,14 @@ body {
   text-align: center;
   user-select: none;
   caret-color: transparent;
+  touch-action: manipulation;
+}
+
+@media (max-width: 768px) {
+  .invalid-word-dialog .dialog-content {
+    padding: 1.5rem;
+    max-width: 90%;
+  }
 }
 
 .invalid-word-dialog h3 {
@@ -267,6 +286,22 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 48px;
+  min-width: 100px;
+}
+
+@media (max-width: 768px) {
+  .btn {
+    min-height: 52px;
+    padding: 1rem 2rem;
+    font-size: 1.05rem;
+  }
+}
+
+.btn:active {
+  transform: scale(0.95);
 }
 
 .btn-primary {
