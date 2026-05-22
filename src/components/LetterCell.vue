@@ -49,6 +49,30 @@ const stateClass = computed(() => {
   cursor: default;
   outline: none;
   caret-color: transparent;
+  flex-shrink: 0;
+}
+
+/* Word length specific sizing */
+.word-length-5 .letter-cell,
+.word-length-6 .letter-cell,
+.word-length-7 .letter-cell {
+  width: 60px;
+  height: 60px;
+}
+
+.word-length-8 .letter-cell {
+  width: 52px;
+  height: 52px;
+}
+
+.word-length-9 .letter-cell {
+  width: 46px;
+  height: 46px;
+}
+
+.word-length-10 .letter-cell {
+  width: 42px;
+  height: 42px;
 }
 
 @media (max-width: 768px) {
@@ -57,12 +81,42 @@ const stateClass = computed(() => {
     height: 45px;
     border-width: 1.5px;
   }
+  
+  .word-length-8 .letter-cell {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .word-length-9 .letter-cell {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .word-length-10 .letter-cell {
+    width: 33px;
+    height: 33px;
+  }
 }
 
 @media (max-width: 480px) {
   .letter-cell {
     width: 38px;
     height: 38px;
+  }
+  
+  .word-length-8 .letter-cell {
+    width: 34px;
+    height: 34px;
+  }
+  
+  .word-length-9 .letter-cell {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .word-length-10 .letter-cell {
+    width: 27px;
+    height: 27px;
   }
 }
 
@@ -86,15 +140,52 @@ const stateClass = computed(() => {
   caret-color: transparent;
 }
 
+/* Font size adjustments for longer words */
+.word-length-8 .letter-text {
+  font-size: 28px;
+}
+
+.word-length-9 .letter-text {
+  font-size: 24px;
+}
+
+.word-length-10 .letter-text {
+  font-size: 22px;
+}
+
 @media (max-width: 768px) {
   .letter-text {
     font-size: 24px;
+  }
+  
+  .word-length-8 .letter-text {
+    font-size: 22px;
+  }
+  
+  .word-length-9 .letter-text {
+    font-size: 19px;
+  }
+  
+  .word-length-10 .letter-text {
+    font-size: 17px;
   }
 }
 
 @media (max-width: 480px) {
   .letter-text {
     font-size: 20px;
+  }
+  
+  .word-length-8 .letter-text {
+    font-size: 18px;
+  }
+  
+  .word-length-9 .letter-text {
+    font-size: 16px;
+  }
+  
+  .word-length-10 .letter-text {
+    font-size: 14px;
   }
 }
 

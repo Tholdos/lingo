@@ -40,8 +40,8 @@
       />
     </div>
     
-    <!-- THIS IS THE SECTION THAT CHANGED - REPLACE YOUR EXISTING game-grid div with this: -->
-    <div class="game-grid" ref="gameGridRef">
+    <!-- Game grid with dynamic sizing based on word length -->
+    <div class="game-grid" ref="gameGridRef" :class="'word-length-' + gameStore.wordLength">
       <div v-for="(row, rowIndex) in gameStore.cells" :key="rowIndex" class="row">
         <LetterCell 
           v-for="(cell, colIndex) in row" 
@@ -266,11 +266,38 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Adjust gap for longer words */
+.word-length-9 .row,
+.word-length-10 .row {
+  gap: 0.4rem;
 }
 
 .row {
   display: flex;
   gap: 0.5rem;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .game-grid {
+    gap: 0.3rem;
+  }
+  
+  .word-length-9 .row,
+  .word-length-10 .row {
+    gap: 0.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .word-length-9 .row,
+  .word-length-10 .row {
+    gap: 0.25rem;
+  }
 }
 
 .status-message {
