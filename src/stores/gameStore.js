@@ -119,13 +119,13 @@ export const useGameStore = defineStore('game', () => {
     gameStarted.value = true
     showGrid.value = false
     
-    // Play intro tune if enabled, then start game after 22 seconds
+    // Play intro tune if enabled, then start game after 19 seconds
     if (settings.playIntroTune) {
       playIntroTune()
-      // Wait 22 seconds before showing grid and starting word
+      // Wait 19 seconds before showing grid and starting word
       setTimeout(() => {
         startNewWord()
-      }, 22000)
+      }, 19000)
     } else {
       startNewWord()
     }
@@ -399,16 +399,17 @@ export const useGameStore = defineStore('game', () => {
     
     currentColumn.value = 0
     
-    // Add delay before revealing bonus letter (different for timeout vs normal turn)
+    // Copy hints from previous row immediately
+    copyHintsToNextRow()
+    
+    // Add delay before revealing NEW bonus letter (different for timeout vs normal turn)
     const delay = isTimeout ? 1000 : 1500
     await sleep(delay)
     
-    // Reveal bonus letter if hint letters are enabled
+    // Reveal NEW bonus letter if hint letters are enabled
     if (showHintLetters.value) {
       await revealBonusLetter()
     }
-    
-    copyHintsToNextRow()
     
     // Start timer after bonus letter is revealed
     startTimer()
