@@ -346,10 +346,11 @@ onUnmounted(() => {
     display: grid;
     grid-template-columns: minmax(90px, auto) 1fr minmax(90px, auto);
     grid-template-rows: auto 1fr auto;
-    gap: 0.3rem 0.5rem;
-    padding: 0.25rem;
+    gap: 0.2rem 0.5rem;
+    padding: 0.15rem;
     align-items: start;
     height: 100vh;
+    overflow: hidden;
   }
   
   .lingo-title {
@@ -369,7 +370,7 @@ onUnmounted(() => {
   .multiplayer-status {
     grid-column: 2;
     grid-row: 1;
-    padding: 0.25rem 0.5rem;
+    padding: 0.2rem 0.4rem;
     font-size: 0.7rem;
     justify-self: center;
   }
@@ -380,12 +381,13 @@ onUnmounted(() => {
     display: contents; /* Makes children act as direct grid items */
   }
   
-  /* Player 1 on the left with logo above */
+  /* Player 1 on the left - aligned to top */
   .players-panel > :nth-child(1) {
     grid-column: 1;
     grid-row: 2;
-    align-self: center;
+    align-self: start;
     justify-self: center;
+    margin-top: 0.3rem;
   }
   
   /* Timer on the right above player 2 */
@@ -396,13 +398,13 @@ onUnmounted(() => {
     align-self: center;
   }
   
-  /* Player 2 on the right */
+  /* Player 2 on the right - aligned to top, same as Player 1 */
   .players-panel > :nth-child(3) {
     grid-column: 3;
     grid-row: 2;
     align-self: start;
     justify-self: center;
-    margin-top: 0.5rem;
+    margin-top: 0.3rem;
   }
   
   .game-grid {
@@ -411,7 +413,7 @@ onUnmounted(() => {
     align-self: start;
     justify-self: center;
     gap: 0.25rem;
-    margin-top: 0.5rem;
+    margin-top: 0;
   }
   
   .row {
