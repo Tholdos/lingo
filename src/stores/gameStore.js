@@ -423,6 +423,7 @@ export const useGameStore = defineStore('game', () => {
         revealedPositions.value.add(i)
         cells.value[currentRow.value][i].letter = targetWord.value[i]
         cells.value[currentRow.value][i].state = LetterState.Hint
+        playBonusLetterSound()
         return
       }
     }
@@ -712,30 +713,18 @@ export const useGameStore = defineStore('game', () => {
   
   function playTimeoutBuzzer() {
     try {
-      const ctx = getAudioContext()
-      const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12)
-      
-      const oscillator = ctx.createOscillator()
-      const gainNode = ctx.createGain()
-      
-      oscillator.connect(gainNode)
-      gainNode.connect(ctx.destination)
-      
-      oscillator.frequency.value = midiToFreq(42) // Low note for buzzer
-      oscillator.type = 'sawtooth' // Harsh buzzer sound
-      
-      const duration = 700 / 1000 // 700ms
-      const now = ctx.currentTime
-      
-      gainNode.gain.setValueAtTime(0, now)
-      gainNode.gain.linearRampToValueAtTime(0.08, now + 0.01) // Quick attack - much softer
-      gainNode.gain.setValueAtTime(0.08, now + duration - 0.05) // Hold - much softer
-      gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration) // Release
-      
-      oscillator.start(now)
-      oscillator.stop(now + duration)
+      const audio = new Audio('/sounds/buzzer.mp3')
+      audio.volume = 0.5
+      audio.play().catch(() => {
+        // If mp3 fails, try wav
+        const audioWav = new Audio('/sounds/buzzer.wav')
+        audioWav.volume = 0.5
+        audioWav.play().catch(() => {
+          // Silently fail if both formats fail
+        })
+      })
     } catch (e) {
-      // Silently fail if audio context is not available
+      // Silently fail
     }
   }
 
@@ -812,6 +801,23 @@ export const useGameStore = defineStore('game', () => {
         audioWav.volume = 0.4
         audioWav.play().catch(() => {
           // If both fail, silently continue (no synthesized fallback for turn-over)
+        })
+      })
+    } catch (e) {
+      // Silently fail
+    }
+  }
+
+  function playBonusLetterSound() {
+    try {
+      const audio = new Audio('/sounds/bonusLetter.mp3')
+      audio.volume = 0.6
+      audio.play().catch(() => {
+        // If mp3 fails, try wav
+        const audioWav = new Audio('/sounds/bonusLetter.wav')
+        audioWav.volume = 0.6
+        audioWav.play().catch(() => {
+          // Silently fail if both formats fail
         })
       })
     } catch (e) {
