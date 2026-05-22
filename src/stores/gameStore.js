@@ -116,6 +116,9 @@ export const useGameStore = defineStore('game', () => {
     showHintLetters.value = settings.showHintLetters
     activePlayer.value = 1
     
+    // Play intro tune
+    playIntroTune()
+    
     startNewWord()
   }
 
@@ -523,6 +526,26 @@ export const useGameStore = defineStore('game', () => {
   
   function playVictoryTune() {
     try {
+      // Try to play audio file first (mp3 or wav)
+      const audio = new Audio('/victory.mp3')
+      audio.volume = 0.5
+      audio.play().catch(() => {
+        // If mp3 fails, try wav
+        const audioWav = new Audio('/victory.wav')
+        audioWav.volume = 0.5
+        audioWav.play().catch(() => {
+          // If both fail, fall back to synthesized tune
+          playSynthesizedVictoryTune()
+        })
+      })
+    } catch (e) {
+      // Fall back to synthesized tune
+      playSynthesizedVictoryTune()
+    }
+  }
+
+  function playSynthesizedVictoryTune() {
+    try {
       const ctx = getAudioContext()
       const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12)
       
@@ -671,6 +694,68 @@ export const useGameStore = defineStore('game', () => {
       
       oscillator.start(now)
       oscillator.stop(now + duration)
+    } catch (e) {
+      // Silently fail if audio context is not available
+    }
+  }
+
+  function playIntroTune() {
+    try {
+      // Try to play audio file first (mp3 or wav)
+      const audio = new Audio('/intro.mp3')
+      audio.volume = 0.5
+      audio.play().catch(() => {
+        // If mp3 fails, try wav
+        const audioWav = new Audio('/intro.wav')
+        audioWav.volume = 0.5
+        audioWav.play().catch(() => {
+          // If both fail, fall back to synthesized tune
+          playSynthesizedIntroTune()
+        })
+      })
+    } catch (e) {
+      // Fall back to synthesized tune
+      playSynthesizedIntroTune()
+    }
+  }
+
+  function playSynthesizedIntroTune() {
+    try {
+      const ctx = getAudioContext()
+      const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12)
+      
+      // Intro tune - uplifting and energetic
+      const notes = [
+        { midi: 60, duration: 200, gap: 10 },  // C4
+        { midi: 64, duration: 200, gap: 10 },  // E4
+        { midi: 67, duration: 200, gap: 10 },  // G4
+        { midi: 72, duration: 400, gap: 50 }   // C5 (longer)
+      ]
+      
+      let currentTime = ctx.currentTime
+      
+      notes.forEach(note => {
+        const oscillator = ctx.createOscillator()
+        const gainNode = ctx.createGain()
+        
+        oscillator.connect(gainNode)
+        gainNode.connect(ctx.destination)
+        
+        oscillator.frequency.value = midiToFreq(note.midi)
+        oscillator.type = 'triangle'
+        
+        const noteDuration = note.duration / 1000
+        
+        gainNode.gain.setValueAtTime(0, currentTime)
+        gainNode.gain.linearRampToValueAtTime(0.15, currentTime + 0.01)
+        gainNode.gain.linearRampToValueAtTime(0.12, currentTime + noteDuration * 0.7)
+        gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + noteDuration)
+        
+        oscillator.start(currentTime)
+        oscillator.stop(currentTime + noteDuration)
+        
+        currentTime += (note.duration / 1000) + (note.gap / 1000)
+      })
     } catch (e) {
       // Silently fail if audio context is not available
     }
