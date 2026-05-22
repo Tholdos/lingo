@@ -72,6 +72,16 @@ watch(invalidWordDialog, (newValue) => {
   }
 })
 
+// Watch for victory/overlay dialog to blur mobile keyboard
+watch(() => gameStore.showOverlay, (newValue) => {
+  if (newValue) {
+    // Dialog opened - blur any active input to hide mobile keyboard
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+  }
+})
+
 onMounted(async () => {
   // Load word lists
   try {

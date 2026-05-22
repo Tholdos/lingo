@@ -3,8 +3,8 @@
     <div class="overlay-content">
       <h2>{{ message }}</h2>
       <div class="button-group">
-        <button @click="handleNewWord" class="btn btn-primary" title="Druk op Enter">Nieuw woord</button>
-        <button @click="handleNewGame" class="btn btn-secondary">Nieuw spel</button>
+        <button @click="handleNewWord" @touchend.prevent="handleNewWord" class="btn btn-primary" title="Druk op Enter">Nieuw woord</button>
+        <button @click="handleNewGame" @touchend.prevent="handleNewGame" class="btn btn-secondary">Nieuw spel</button>
       </div>
     </div>
   </div>
@@ -59,6 +59,7 @@ onUnmounted(() => {
   z-index: 2000;
   user-select: none;
   caret-color: transparent;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .overlay-content {
@@ -69,6 +70,14 @@ onUnmounted(() => {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   user-select: none;
   caret-color: transparent;
+  touch-action: manipulation;
+}
+
+@media (max-width: 768px) {
+  .overlay-content {
+    padding: 2rem 1.5rem;
+    max-width: 90%;
+  }
 }
 
 .overlay-content h2 {
@@ -79,10 +88,18 @@ onUnmounted(() => {
   caret-color: transparent;
 }
 
+@media (max-width: 768px) {
+  .overlay-content h2 {
+    font-size: 1.5rem;
+    margin: 0 0 1.5rem 0;
+  }
+}
+
 .button-group {
   display: flex;
   gap: 1rem;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .btn {
@@ -93,6 +110,22 @@ onUnmounted(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 48px;
+  min-width: 120px;
+}
+
+@media (max-width: 768px) {
+  .btn {
+    min-height: 52px;
+    padding: 1rem 2rem;
+    font-size: 1.05rem;
+  }
+}
+
+.btn:active {
+  transform: scale(0.95);
 }
 
 .btn-primary {
