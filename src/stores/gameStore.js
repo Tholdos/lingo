@@ -365,10 +365,8 @@ export const useGameStore = defineStore('game', () => {
       playTimeoutBuzzer()
     } else {
       playTurnSwitchSound()
+      playTurnOverSound()
     }
-    
-    // Also play turn-over sound
-    playTurnOverSound()
     
     activePlayer.value = activePlayer.value === 1 ? 2 : 1
     
