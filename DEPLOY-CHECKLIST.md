@@ -26,7 +26,7 @@
    ```
 
 3. **Wait for deployment**
-   - Copy your URL: `https://lingo-server-xxxx.onrender.com`
+   - Copy your URL: `https://lingo-server.onrender.com`
 
 ---
 
@@ -35,7 +35,7 @@
 1. **Update `.env.production`**
    - Replace URL with your Render URL:
    ```
-   VITE_SERVER_URL=https://lingo-server-xxxx.onrender.com
+   VITE_SERVER_URL=https://lingo-server.onrender.com
    ```
 
 2. **Go to Vercel.com**

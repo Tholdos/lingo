@@ -4,6 +4,7 @@
   "description": "Lingo multiplayer server",
   "main": "index.js",
   "scripts": {
+    "build": "echo 'No build step required for server'",
     "start": "node index.js"
   },
   "dependencies": {
