@@ -279,7 +279,7 @@ export const useGameStore = defineStore('game', () => {
     for (let i = 0; i < wordLength.value; i++) {
       row[i].state = finalStates[i]
       playLetterSound(finalStates[i])
-      await sleep(250)
+      await sleep(100)
     }
     
     // Check if won
@@ -484,6 +484,37 @@ export const useGameStore = defineStore('game', () => {
   }
   
   function playLetterSound(letterState) {
+    try {
+      let audioFile = ''
+      
+      // Select audio file based on letter state
+      switch (letterState) {
+        case LetterState.Correct:
+          audioFile = '/sounds/correct.mp3'
+          break
+        case LetterState.WrongPosition:
+          audioFile = '/sounds/wrongPosition.mp3'
+          break
+        case LetterState.Incorrect:
+          audioFile = '/sounds/incorrect.mp3'
+          break
+        default:
+          audioFile = '/sounds/incorrect.mp3'
+      }
+      
+      const audio = new Audio(audioFile)
+      audio.volume = 0.3
+      audio.play().catch(() => {
+        // If audio file fails, try synthesized fallback
+        playSynthesizedLetterSound(letterState)
+      })
+    } catch (e) {
+      // Fall back to synthesized sound
+      playSynthesizedLetterSound(letterState)
+    }
+  }
+
+  function playSynthesizedLetterSound(letterState) {
     try {
       const ctx = getAudioContext()
       const oscillator = ctx.createOscillator()
