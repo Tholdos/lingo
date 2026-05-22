@@ -343,18 +343,21 @@ onUnmounted(() => {
 @media (max-height: 600px) and (orientation: landscape) {
   .game-container {
     display: grid;
-    grid-template-columns: minmax(85px, auto) 1fr minmax(85px, auto);
-    grid-template-rows: auto auto 1fr auto;
+    grid-template-columns: minmax(90px, auto) 1fr minmax(90px, auto);
+    grid-template-rows: auto 1fr auto;
     gap: 0.3rem 0.5rem;
     padding: 0.25rem;
     align-items: start;
+    height: 100vh;
   }
   
   .lingo-title {
-    grid-column: 1 / -1;
+    grid-column: 1;
     grid-row: 1;
-    font-size: 18px;
-    margin: 0.1rem 0;
+    font-size: 16px;
+    margin: 0;
+    text-align: center;
+    writing-mode: horizontal-tb;
   }
   
   .mobile-input {
@@ -363,63 +366,64 @@ onUnmounted(() => {
   }
   
   .multiplayer-status {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    grid-column: 2;
+    grid-row: 1;
     padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
+    justify-self: center;
   }
   
   .players-panel {
     grid-column: 1 / -1;
-    grid-row: 3;
+    grid-row: 2;
     display: contents; /* Makes children act as direct grid items */
   }
   
-  /* Player 1 on the left */
+  /* Player 1 on the left with logo above */
   .players-panel > :nth-child(1) {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 2;
     align-self: center;
+    justify-self: center;
   }
   
-  /* Timer in center top */
+  /* Timer on the right above player 2 */
   .players-panel > :nth-child(2) {
-    grid-column: 2;
-    grid-row: 3;
+    grid-column: 3;
+    grid-row: 1;
     justify-self: center;
-    align-self: start;
-    margin-top: 0.5rem;
+    align-self: center;
   }
   
   /* Player 2 on the right */
   .players-panel > :nth-child(3) {
     grid-column: 3;
-    grid-row: 3;
+    grid-row: 2;
     align-self: center;
+    justify-self: center;
   }
   
   .game-grid {
     grid-column: 2;
-    grid-row: 3;
+    grid-row: 2;
     align-self: center;
     justify-self: center;
-    gap: 0.2rem;
-    margin-top: 2.5rem; /* Space for timer above */
+    gap: 0.25rem;
   }
   
   .row {
-    gap: 0.2rem;
+    gap: 0.25rem;
   }
   
   .word-length-9 .row,
   .word-length-10 .row {
-    gap: 0.15rem;
+    gap: 0.2rem;
   }
   
   .status-message {
     grid-column: 1 / -1;
-    grid-row: 4;
-    font-size: 0.85rem;
+    grid-row: 3;
+    font-size: 0.8rem;
   }
 }
 </style>

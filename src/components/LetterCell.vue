@@ -262,23 +262,23 @@ const stateClass = computed(() => {
   }
   
   .word-length-7 .letter-cell {
-    width: 30px;
-    height: 30px;
+    width: 35px;
+    height: 35px;
   }
   
   .word-length-8 .letter-cell {
-    width: 28px;
-    height: 28px;
+    width: 33px;
+    height: 33px;
   }
   
   .word-length-9 .letter-cell {
-    width: 26px;
-    height: 26px;
+    width: 31px;
+    height: 31px;
   }
   
   .word-length-10 .letter-cell {
-    width: 24px;
-    height: 24px;
+    width: 29px;
+    height: 29px;
   }
   
   .letter-text {
@@ -286,19 +286,19 @@ const stateClass = computed(() => {
   }
   
   .word-length-7 .letter-text {
-    font-size: 17px;
+    font-size: 20px;
   }
   
   .word-length-8 .letter-text {
-    font-size: 16px;
+    font-size: 19px;
   }
   
   .word-length-9 .letter-text {
-    font-size: 14px;
+    font-size: 17px;
   }
   
   .word-length-10 .letter-text {
-    font-size: 13px;
+    font-size: 16px;
   }
 }
 </style>
