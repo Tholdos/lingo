@@ -515,13 +515,13 @@ export const useGameStore = defineStore('game', () => {
         if (isComplete) {
           // Submit the word and check result
           const result = await submitGuess()
-          // If invalid, clear row and switch player with buzzer
+          // If invalid, clear row and retry on same row with buzzer
           if (result === 'invalid' || result === 'duplicate' || result === 'wrongFirstLetter') {
-            switchPlayer(true) // true for timeout/buzzer sound
+            retryAfterTimeout()
           }
         } else {
-          // Just switch player with timeout
-          switchPlayer(true)
+          // Incomplete word - retry on same row with timeout
+          retryAfterTimeout()
         }
       }
     }, 1000)
@@ -551,6 +551,27 @@ export const useGameStore = defineStore('game', () => {
     
     // Add delay before revealing bonus letter
     await sleep(1500)
+    
+    // Reveal bonus letter if hint letters are enabled
+    if (showHintLetters.value) {
+      await revealBonusLetter()
+    }
+    
+    // Start timer after bonus letter is revealed
+    startTimer()
+  }
+
+  async function retryAfterTimeout() {
+    stopTimer()
+    
+    // Play buzzer sound
+    playTimeoutBuzzer()
+    
+    // Clear the current row (restores hints)
+    clearCurrentRow()
+    
+    // Add delay before revealing bonus letter
+    await sleep(1000)
     
     // Reveal bonus letter if hint letters are enabled
     if (showHintLetters.value) {
