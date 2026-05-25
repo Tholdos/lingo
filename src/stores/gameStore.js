@@ -392,7 +392,7 @@ export const useGameStore = defineStore('game', () => {
   async function switchPlayer(isTimeout = false) {
     stopTimer()
     
-    // Clear current row if timeout
+    // Clear current row if timeout (and word wasn't complete)
     if (isTimeout) {
       clearCurrentRow()
     }
@@ -497,12 +497,33 @@ export const useGameStore = defineStore('game', () => {
     isTimerActive.value = true
     timeRemaining.value = TIME_LIMIT_SECONDS
     
-    timerInterval = setInterval(() => {
+    timerInterval = setInterval(async () => {
       if (timeRemaining.value > 0) {
         timeRemaining.value--
       } else {
         stopTimer()
-        switchPlayer(true) // true indicates timeout
+        // Check if the current row is complete
+        const row = cells.value[currentRow.value]
+        let isComplete = true
+        for (let i = 0; i < wordLength.value; i++) {
+          if (row[i].letter === '') {
+            isComplete = false
+            break
+          }
+        }
+        
+        if (isComplete) {
+          // Submit the word and check result
+          const result = await submitGuess()
+          // If invalid, clear row and switch player
+          if (result === 'invalid' || result === 'duplicate' || result === 'wrongFirstLetter') {
+            clearCurrentRow()
+            switchPlayer()
+          }
+        } else {
+          // Just switch player with timeout
+          switchPlayer(true)
+        }
       }
     }, 1000)
   }

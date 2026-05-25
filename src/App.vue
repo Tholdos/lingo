@@ -171,10 +171,21 @@ async function handleKeyPress(event) {
   if (event.key === 'Enter') {
     event.preventDefault()
     const result = await gameStore.submitGuess()
-    if (result === 'invalid' || result === 'duplicate' || result === 'wrongFirstLetter') {
-      // Clear the current row and switch player immediately
-      gameStore.clearCurrentRow()
-      gameStore.switchPlayer()
+    if (result === 'invalid') {
+      currentInvalidWord.value = gameStore.currentGuess
+      duplicateWord.value = false
+      wrongFirstLetter.value = false
+      invalidWordDialog.value = true
+    } else if (result === 'duplicate') {
+      currentInvalidWord.value = gameStore.currentGuess
+      duplicateWord.value = true
+      wrongFirstLetter.value = false
+      invalidWordDialog.value = true
+    } else if (result === 'wrongFirstLetter') {
+      currentInvalidWord.value = gameStore.currentGuess
+      duplicateWord.value = false
+      wrongFirstLetter.value = true
+      invalidWordDialog.value = true
     }
   } else if (event.key === 'Backspace') {
     event.preventDefault()
@@ -210,8 +221,6 @@ async function handleKeyPress(event) {
 async function acceptInvalidWord() {
   // Process the word as if it were valid
   invalidWordDialog.value = false
-  // Restart timer before processing
-  gameStore.startTimer()
   // Wait a tick to ensure dialog is closed before processing
   await new Promise(resolve => setTimeout(resolve, 10))
   await gameStore.submitGuess(true) // bypass dictionary check
@@ -219,9 +228,10 @@ async function acceptInvalidWord() {
 
 function rejectInvalidWord() {
   invalidWordDialog.value = false
-  // Don't restart timer - switchPlayer will handle it
-  // Switch player
-  gameStore.switchPlayer()
+  // Clear the current row but stay on the same row (don't advance)
+  gameStore.clearCurrentRow()
+  // Restart the timer for the same player
+  gameStore.startTimer()
 }
 </script>
 
