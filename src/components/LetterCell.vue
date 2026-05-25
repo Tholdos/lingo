@@ -232,8 +232,8 @@ const stateClass = computed(() => {
 }
 
 .letter-cell.correct {
-  background-color: #dc2626;
-  border-color: #ef4444;
+  background-color: #16a34a;
+  border-color: #22c55e;
 }
 
 .letter-cell.hint {

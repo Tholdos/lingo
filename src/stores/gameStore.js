@@ -392,6 +392,11 @@ export const useGameStore = defineStore('game', () => {
   async function switchPlayer(isTimeout = false) {
     stopTimer()
     
+    // Clear current row if timeout
+    if (isTimeout) {
+      clearCurrentRow()
+    }
+    
     // Play appropriate sound
     if (isTimeout) {
       playTimeoutBuzzer()

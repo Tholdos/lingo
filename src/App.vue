@@ -24,9 +24,9 @@
         <h3 v-else-if="duplicateWord">Woord al geraden</h3>
         <h3 v-else>Onbekend woord</h3>
         
-        <p v-if="wrongFirstLetter">Het woord "{{ currentInvalidWord }}" begint niet met de juiste letter.</p>
-        <p v-else-if="duplicateWord">Het woord "{{ currentInvalidWord }}" is al eerder geraden in deze ronde.</p>
-        <p v-else>Het woord "{{ currentInvalidWord }}" is niet in de woordenlijst.</p>
+        <p v-if="wrongFirstLetter">Het woord "{{ displayInvalidWord }}" begint niet met de juiste letter.</p>
+        <p v-else-if="duplicateWord">Het woord "{{ displayInvalidWord }}" is al eerder geraden in deze ronde.</p>
+        <p v-else>Het woord "{{ displayInvalidWord }}" is niet in de woordenlijst.</p>
         
         <div class="button-group" v-if="!duplicateWord && !wrongFirstLetter">
           <button @click="acceptInvalidWord" @touchend.prevent="acceptInvalidWord" class="btn btn-primary" title="Druk op Enter">Accepteren</button>
@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useGameStore } from '@/stores/gameStore'
 import StartupDialog from '@/components/StartupDialog.vue'
 import GameGrid from '@/components/GameGrid.vue'
@@ -54,6 +54,11 @@ const currentInvalidWord = ref('')
 const duplicateWord = ref(false)
 const wrongFirstLetter = ref(false)
 let dialogJustOpened = false
+
+// Display invalid word with IJ normalization
+const displayInvalidWord = computed(() => {
+  return currentInvalidWord.value.replace(/\u0178/g, 'IJ')
+})
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
 
@@ -166,21 +171,10 @@ async function handleKeyPress(event) {
   if (event.key === 'Enter') {
     event.preventDefault()
     const result = await gameStore.submitGuess()
-    if (result === 'invalid') {
-      currentInvalidWord.value = gameStore.currentGuess
-      duplicateWord.value = false
-      wrongFirstLetter.value = false
-      invalidWordDialog.value = true
-    } else if (result === 'duplicate') {
-      currentInvalidWord.value = gameStore.currentGuess
-      duplicateWord.value = true
-      wrongFirstLetter.value = false
-      invalidWordDialog.value = true
-    } else if (result === 'wrongFirstLetter') {
-      currentInvalidWord.value = gameStore.currentGuess
-      duplicateWord.value = false
-      wrongFirstLetter.value = true
-      invalidWordDialog.value = true
+    if (result === 'invalid' || result === 'duplicate' || result === 'wrongFirstLetter') {
+      // Clear the current row and switch player immediately
+      gameStore.clearCurrentRow()
+      gameStore.switchPlayer()
     }
   } else if (event.key === 'Backspace') {
     event.preventDefault()
