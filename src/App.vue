@@ -228,10 +228,8 @@ async function acceptInvalidWord() {
 
 function rejectInvalidWord() {
   invalidWordDialog.value = false
-  // Clear the current row but stay on the same row (don't advance)
-  gameStore.clearCurrentRow()
-  // Restart the timer for the same player
-  gameStore.startTimer()
+  // Retry with sounds and bonus letter
+  gameStore.retryInvalidWord()
 }
 </script>
 

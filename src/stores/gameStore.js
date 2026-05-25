@@ -515,10 +515,9 @@ export const useGameStore = defineStore('game', () => {
         if (isComplete) {
           // Submit the word and check result
           const result = await submitGuess()
-          // If invalid, clear row and switch player
+          // If invalid, clear row and switch player with buzzer
           if (result === 'invalid' || result === 'duplicate' || result === 'wrongFirstLetter') {
-            clearCurrentRow()
-            switchPlayer()
+            switchPlayer(true) // true for timeout/buzzer sound
           }
         } else {
           // Just switch player with timeout
@@ -538,6 +537,28 @@ export const useGameStore = defineStore('game', () => {
 
   function closeOverlay() {
     showOverlay.value = false
+  }
+
+  async function retryInvalidWord() {
+    stopTimer()
+    
+    // Play turnover sound
+    playTurnSwitchSound()
+    playTurnOverSound()
+    
+    // Clear the current row (restores hints)
+    clearCurrentRow()
+    
+    // Add delay before revealing bonus letter
+    await sleep(1500)
+    
+    // Reveal bonus letter if hint letters are enabled
+    if (showHintLetters.value) {
+      await revealBonusLetter()
+    }
+    
+    // Start timer after bonus letter is revealed
+    startTimer()
   }
 
   function sleep(ms) {
@@ -1052,6 +1073,7 @@ export const useGameStore = defineStore('game', () => {
     isMyTurn,
     resetMultiplayer,
     stopTimer,
-    startTimer
+    startTimer,
+    retryInvalidWord
   }
 })
