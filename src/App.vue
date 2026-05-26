@@ -264,9 +264,10 @@ async function acceptInvalidWord() {
 }
 
 function rejectInvalidWord() {
-  invalidWordDialog.value = false
-  // Retry with sounds and bonus letter
+  // First clear the state
   gameStore.retryInvalidWord()
+  // Then close the dialog
+  invalidWordDialog.value = false
 }
 </script>
 

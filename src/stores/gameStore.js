@@ -410,12 +410,16 @@ export const useGameStore = defineStore('game', () => {
       
       if (shouldBeHint) {
         // Restore the hint letter
-        row[i].letter = targetWord.value[i]
-        row[i].state = LetterState.Hint
+        row[i] = {
+          letter: targetWord.value[i],
+          state: LetterState.Hint
+        }
       } else {
         // Clear the cell
-        row[i].letter = ''
-        row[i].state = LetterState.Empty
+        row[i] = {
+          letter: '',
+          state: LetterState.Empty
+        }
       }
     }
     currentColumn.value = 0
@@ -427,6 +431,11 @@ export const useGameStore = defineStore('game', () => {
     // Clear current row if timeout or invalid word
     if (isTimeout || isInvalidWord) {
       clearCurrentRow()
+      
+      // For multiplayer, emit state immediately after clearing
+      if (isMultiplayer.value) {
+        emitGameState()
+      }
     }
     
     // Play appropriate sound (non-blocking)
@@ -479,7 +488,7 @@ export const useGameStore = defineStore('game', () => {
       }
     })
     
-    // Emit game state for multiplayer
+    // Emit game state for multiplayer (final state after all changes)
     if (isMultiplayer.value) {
       emitGameState()
     }
