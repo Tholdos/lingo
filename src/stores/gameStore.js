@@ -669,6 +669,12 @@ export const useGameStore = defineStore('game', () => {
   async function revealWord() {
     stopTimer()
     
+    // Play reveal answer sound and shift rows with animation
+    playRevealAnswerSound()
+    
+    // Wait 1 second for the sound (and allow animation)
+    await sleep(1000)
+    
     // Shift all rows up once more and use last row for reveal
     for (let r = 0; r < MAX_ATTEMPTS - 1; r++) {
       for (let c = 0; c < wordLength.value; c++) {
@@ -687,8 +693,13 @@ export const useGameStore = defineStore('game', () => {
       }
     }
     
-    // Wait 2 seconds before revealing (row is blank during this time)
-    await sleep(2000)
+    // Emit state for multiplayer
+    if (isMultiplayer.value) {
+      emitGameState()
+    }
+    
+    // Small delay to show blank row
+    await sleep(500)
     
     // Reveal letters one by one with letter and green animation simultaneously
     for (let i = 0; i < wordLength.value; i++) {
@@ -1064,6 +1075,23 @@ export const useGameStore = defineStore('game', () => {
       audio.play().catch(() => {
         // If mp3 fails, try wav
         const audioWav = new Audio('/sounds/bonusLetter.wav')
+        audioWav.volume = 0.6
+        audioWav.play().catch(() => {
+          // Silently fail if both formats fail
+        })
+      })
+    } catch (e) {
+      // Silently fail
+    }
+  }
+
+  function playRevealAnswerSound() {
+    try {
+      const audio = new Audio('/sounds/revealAnswer.mp3')
+      audio.volume = 0.6
+      audio.play().catch(() => {
+        // If mp3 fails, try wav
+        const audioWav = new Audio('/sounds/revealAnswer.wav')
         audioWav.volume = 0.6
         audioWav.play().catch(() => {
           // Silently fail if both formats fail

@@ -292,6 +292,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 0.4rem;
   max-width: 100%;
+  transition: all 0.3s ease;
 }
 
 /* Adjust gap for longer words */
@@ -304,6 +305,7 @@ onUnmounted(() => {
   display: flex;
   gap: 0.4rem;
   justify-content: center;
+  transition: transform 0.3s ease;
 }
 
 @media (max-width: 768px) {
