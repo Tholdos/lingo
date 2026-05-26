@@ -33,7 +33,8 @@ export const useGameStore = defineStore('game', () => {
   const overlayMessage = ref('')
   const isProcessingGuess = ref(false)
   const guessedWords = ref(new Set())
-  const extraGuessCount = ref(0)
+  const player1UsedExtraGuess = ref(false)
+  const player2UsedExtraGuess = ref(false)
   const roundStartPlayer = ref(1)
   const isVictoryMode = ref(false)
   
@@ -128,7 +129,8 @@ export const useGameStore = defineStore('game', () => {
     currentColumn.value = 0  // Start at position 0
     revealedPositions.value = new Set([0])
     guessedWords.value = new Set()  // Clear guessed words for new round
-    extraGuessCount.value = 0
+    player1UsedExtraGuess.value = false
+    player2UsedExtraGuess.value = false
     roundStartPlayer.value = activePlayer.value
     isVictoryMode.value = false
     
@@ -291,6 +293,28 @@ export const useGameStore = defineStore('game', () => {
       return 'invalid'
     }
     
+    // Check if we're at row 4 and current player has already used their extra turn
+    if (currentRow.value >= MAX_ATTEMPTS - 1) {
+      const currentPlayerUsedExtra = activePlayer.value === 1 ? player1UsedExtraGuess.value : player2UsedExtraGuess.value
+      
+      if (currentPlayerUsedExtra) {
+        // Current player already used their extra turn, don't process this guess
+        const otherPlayerUsedExtra = activePlayer.value === 1 ? player2UsedExtraGuess.value : player1UsedExtraGuess.value
+        
+        if (otherPlayerUsedExtra) {
+          // Both players used their extra turns, reveal word
+          await revealWord()
+          isProcessingGuess.value = false
+          return 'revealed'
+        } else {
+          // Other player hasn't used their extra turn yet, switch to them
+          switchPlayer()
+          isProcessingGuess.value = false
+          return 'switched'
+        }
+      }
+    }
+    
     // Add to guessed words only after validation passes or is bypassed
     guessedWords.value.add(guess)
     
@@ -376,15 +400,30 @@ export const useGameStore = defineStore('game', () => {
     
     // Check if we're at row 4 (5th attempt or beyond)
     if (currentRow.value >= MAX_ATTEMPTS - 1) {
-      // Check if we've already used our 2 extra guesses
-      if (extraGuessCount.value >= 2) {
-        // Reveal the word - no points awarded
-        await revealWord()
-        isProcessingGuess.value = false
-        return 'revealed'
+      // Check if current player already used their extra guess
+      const currentPlayerUsedExtra = activePlayer.value === 1 ? player1UsedExtraGuess.value : player2UsedExtraGuess.value
+      const otherPlayerUsedExtra = activePlayer.value === 1 ? player2UsedExtraGuess.value : player1UsedExtraGuess.value
+      
+      if (currentPlayerUsedExtra) {
+        // Current player already used their extra guess
+        if (otherPlayerUsedExtra) {
+          // Both players used their extra guess, reveal word
+          await revealWord()
+          isProcessingGuess.value = false
+          return 'revealed'
+        } else {
+          // Other player hasn't used their extra guess yet, switch
+          switchPlayer()
+          isProcessingGuess.value = false
+          return 'switched'
+        }
       } else {
-        // Increment extra guess count and switch players
-        extraGuessCount.value++
+        // Mark current player's extra guess as used and switch players
+        if (activePlayer.value === 1) {
+          player1UsedExtraGuess.value = true
+        } else {
+          player2UsedExtraGuess.value = true
+        }
         switchPlayer()
         isProcessingGuess.value = false
         return 'switched'
@@ -592,6 +631,14 @@ export const useGameStore = defineStore('game', () => {
   function retryInvalidWord() {
     stopTimer()
     
+    // If we're at row 4 and both players have used their extra turns, reveal word
+    if (currentRow.value >= MAX_ATTEMPTS - 1) {
+      if (player1UsedExtraGuess.value && player2UsedExtraGuess.value) {
+        revealWord()
+        return
+      }
+    }
+    
     // Clear the current row (restores hints)
     clearCurrentRow()
     
@@ -624,17 +671,36 @@ export const useGameStore = defineStore('game', () => {
   async function retryAfterTimeout() {
     stopTimer()
     
-    // If we're at row 4, check if we should reveal or continue
+    // If we're at row 4, check if current player has already used their extra turn
     if (currentRow.value >= MAX_ATTEMPTS - 1) {
-      // Check if we've already used our 2 extra guesses
-      if (extraGuessCount.value >= 2) {
-        // Reveal the word - no points awarded
-        await revealWord()
-        return
+      const currentPlayerUsedExtra = activePlayer.value === 1 ? player1UsedExtraGuess.value : player2UsedExtraGuess.value
+      const otherPlayerUsedExtra = activePlayer.value === 1 ? player2UsedExtraGuess.value : player1UsedExtraGuess.value
+      
+      if (currentPlayerUsedExtra) {
+        // Current player already used their extra turn
+        if (otherPlayerUsedExtra) {
+          // Both players used their extra turns, reveal word
+          await revealWord()
+          return
+        } else {
+          // Other player hasn't used their extra turn yet, just switch
+          // Don't process this timeout as it doesn't count
+          clearCurrentRow()
+          activePlayer.value = activePlayer.value === 1 ? 2 : 1
+          startTimer()
+          if (isMultiplayer.value) {
+            emitGameState()
+          }
+          return
+        }
       } else {
-        // Increment extra guess count
-        extraGuessCount.value++
-        // Fall through to timeout handling below
+        // Current player hasn't used their extra turn yet, mark it as used
+        if (activePlayer.value === 1) {
+          player1UsedExtraGuess.value = true
+        } else {
+          player2UsedExtraGuess.value = true
+        }
+        // Fall through to normal timeout handling
       }
     }
     
@@ -1183,7 +1249,8 @@ export const useGameStore = defineStore('game', () => {
       showGrid: showGrid.value,
       showOverlay: showOverlay.value,
       overlayMessage: overlayMessage.value,
-      extraGuessCount: extraGuessCount.value,
+      player1UsedExtraGuess: player1UsedExtraGuess.value,
+      player2UsedExtraGuess: player2UsedExtraGuess.value,
       roundStartPlayer: roundStartPlayer.value,
       isVictoryMode: isVictoryMode.value,
       guessedWords: Array.from(guessedWords.value)
@@ -1215,7 +1282,8 @@ export const useGameStore = defineStore('game', () => {
     }
     
     // Sync additional game state
-    if (state.extraGuessCount !== undefined) extraGuessCount.value = state.extraGuessCount
+    if (state.player1UsedExtraGuess !== undefined) player1UsedExtraGuess.value = state.player1UsedExtraGuess
+    if (state.player2UsedExtraGuess !== undefined) player2UsedExtraGuess.value = state.player2UsedExtraGuess
     if (state.roundStartPlayer !== undefined) roundStartPlayer.value = state.roundStartPlayer
     if (state.isVictoryMode !== undefined) isVictoryMode.value = state.isVictoryMode
     if (state.guessedWords) guessedWords.value = new Set(state.guessedWords)
