@@ -372,7 +372,7 @@ export const useGameStore = defineStore('game', () => {
       } else {
         // Increment extra guess count and switch players
         extraGuessCount.value++
-        await switchPlayer()
+        switchPlayer()
         isProcessingGuess.value = false
         
         if (isMultiplayer.value) {
@@ -417,7 +417,7 @@ export const useGameStore = defineStore('game', () => {
     currentColumn.value = 0
   }
 
-  async function switchPlayer(isTimeout = false) {
+  function switchPlayer(isTimeout = false) {
     stopTimer()
     
     // Clear current row if timeout (and word wasn't complete)
@@ -425,7 +425,7 @@ export const useGameStore = defineStore('game', () => {
       clearCurrentRow()
     }
     
-    // Play appropriate sound
+    // Play appropriate sound (non-blocking)
     if (isTimeout) {
       playTimeoutBuzzer()
     } else {
@@ -464,17 +464,16 @@ export const useGameStore = defineStore('game', () => {
     // Copy hints from previous row immediately
     copyHintsToNextRow()
     
-    // Add delay before revealing NEW bonus letter (different for timeout vs normal turn)
-    const delay = isTimeout ? 1000 : 1500
-    await sleep(delay)
-    
-    // Reveal NEW bonus letter if hint letters are enabled
-    if (showHintLetters.value) {
-      await revealBonusLetter()
-    }
-    
-    // Start timer after bonus letter is revealed
+    // Start timer immediately so new player can start typing
     startTimer()
+    
+    // Reveal bonus letter asynchronously without blocking
+    const delay = isTimeout ? 1000 : 1500
+    sleep(delay).then(() => {
+      if (showHintLetters.value) {
+        revealBonusLetter()
+      }
+    })
   }
 
   async function revealBonusLetter() {
@@ -567,26 +566,25 @@ export const useGameStore = defineStore('game', () => {
     showOverlay.value = false
   }
 
-  async function retryInvalidWord() {
+  function retryInvalidWord() {
     stopTimer()
     
-    // Play turnover sound
+    // Play turnover sound (non-blocking)
     playTurnSwitchSound()
     playTurnOverSound()
     
     // Clear the current row (restores hints)
     clearCurrentRow()
     
-    // Add delay before revealing bonus letter
-    await sleep(1500)
-    
-    // Reveal bonus letter if hint letters are enabled
-    if (showHintLetters.value) {
-      await revealBonusLetter()
-    }
-    
-    // Start timer after bonus letter is revealed
+    // Start timer immediately so player can start typing
     startTimer()
+    
+    // Reveal bonus letter asynchronously without blocking
+    sleep(1500).then(() => {
+      if (showHintLetters.value) {
+        revealBonusLetter()
+      }
+    })
   }
 
   async function retryAfterTimeout() {
@@ -602,27 +600,26 @@ export const useGameStore = defineStore('game', () => {
       } else {
         // Increment extra guess count and switch to other player
         extraGuessCount.value++
-        await switchPlayer(true)
+        switchPlayer(true)
         return
       }
     }
     
-    // Play buzzer sound
+    // Play buzzer sound (non-blocking)
     playTimeoutBuzzer()
     
     // Clear the current row (restores hints)
     clearCurrentRow()
     
-    // Add delay before revealing bonus letter
-    await sleep(1000)
-    
-    // Reveal bonus letter if hint letters are enabled
-    if (showHintLetters.value) {
-      await revealBonusLetter()
-    }
-    
-    // Start timer after bonus letter is revealed
+    // Start timer immediately so player can start typing
     startTimer()
+    
+    // Reveal bonus letter asynchronously without blocking
+    sleep(1000).then(() => {
+      if (showHintLetters.value) {
+        revealBonusLetter()
+      }
+    })
   }
 
   async function revealWord() {
