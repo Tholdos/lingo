@@ -349,6 +349,9 @@ export const useGameStore = defineStore('game', () => {
       }
     }
     
+    // Check if this is a winning guess (before animating)
+    const isWinningGuess = guess === targetWord.value
+    
     // Apply states and play sounds with animation delay
     for (let i = 0; i < wordLength.value; i++) {
       row[i].state = finalStates[i]
@@ -356,22 +359,21 @@ export const useGameStore = defineStore('game', () => {
       await sleep(250)
       
       // Emit state for multiplayer to sync letter reveal animation
-      if (isMultiplayer.value) {
+      // But skip emissions for winning guesses to avoid rapid state updates
+      if (isMultiplayer.value && !isWinningGuess) {
         emitGameState()
       }
     }
     
     // Check if won
-    if (guess === targetWord.value) {
-      // Stop the timer immediately
+    if (isWinningGuess) {
+      // Stop the timer immediately (already stopped above, but ensure it's stopped)
       stopTimer()
       
       // Enable victory mode for animations
       isVictoryMode.value = true
       
-      // Play victory tune
-      playVictoryTune()
-      
+      // Update score
       if (activePlayer.value === 1) {
         player1.value.score += 50
       } else {
@@ -379,6 +381,14 @@ export const useGameStore = defineStore('game', () => {
       }
       
       overlayMessage.value = `${activePlayerName.value} heeft het woord geraden!`
+      
+      // Emit state immediately for multiplayer sync (victory mode, stopped timer, updated score)
+      if (isMultiplayer.value) {
+        emitGameState()
+      }
+      
+      // Play victory tune
+      playVictoryTune()
       
       // Delay overlay to show victory animations first
       setTimeout(() => {
@@ -389,10 +399,6 @@ export const useGameStore = defineStore('game', () => {
       }, 2000)
       
       isProcessingGuess.value = false
-      
-      if (isMultiplayer.value) {
-        emitGameState()
-      }
       
       return 'won'
     }
