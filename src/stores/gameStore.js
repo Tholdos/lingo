@@ -619,6 +619,9 @@ export const useGameStore = defineStore('game', () => {
   async function revealWord() {
     stopTimer()
     
+    // Wait 2 seconds before revealing
+    await sleep(2000)
+    
     // Shift all rows up once more and use last row for reveal
     for (let r = 0; r < MAX_ATTEMPTS - 1; r++) {
       for (let c = 0; c < wordLength.value; c++) {
@@ -644,10 +647,7 @@ export const useGameStore = defineStore('game', () => {
       await sleep(250)
     }
     
-    // Play victory tune
-    playVictoryTune()
-    
-    // Wait a bit then show message
+    // Wait a bit then show message (no victory tune)
     await sleep(1000)
     
     // Set active player back to round start player for next word
