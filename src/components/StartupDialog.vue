@@ -46,7 +46,7 @@
       </div>
 
       <div v-if="showJoinDialog" class="join-dialog">
-        <input v-model="joinCode" type="text" placeholder="Kamer code" />
+        <input v-model="joinCode" type="text" placeholder="Kamercode" />
         <button @click="handleJoinRoom" class="btn btn-primary">Deelnemen</button>
         <button @click="handleCancelJoin" class="btn btn-secondary">Annuleren</button>
       </div>
