@@ -48,6 +48,24 @@
       </div>
 
       <div class="form-group">
+        <label>Timer instellingen (seconden):</label>
+        <div class="timer-settings">
+          <div class="timer-input-group">
+            <label>5-7 letters:</label>
+            <input v-model.number="timerShort" type="number" min="5" max="60" />
+          </div>
+          <div class="timer-input-group">
+            <label>8-9 letters:</label>
+            <input v-model.number="timerMedium" type="number" min="5" max="60" />
+          </div>
+          <div class="timer-input-group">
+            <label>10 letters:</label>
+            <input v-model.number="timerLong" type="number" min="5" max="60" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
         <label><input type="checkbox" v-model="showHintLetters" /> Bonusletter weergeven bij beurtverlies</label>
       </div>
 
@@ -95,6 +113,9 @@ const player2Name = ref('Speler 2')
 const wordLength = ref(6)
 const showHintLetters = ref(true)
 const playIntroTune = ref(true)
+const timerShort = ref(14)
+const timerMedium = ref(19)
+const timerLong = ref(24)
 const showJoinDialog = ref(false)
 const joinCode = ref('')
 const player1Input = ref(null)
@@ -111,6 +132,9 @@ onMounted(() => {
       if (settings.wordLength) wordLength.value = settings.wordLength
       if (settings.showHintLetters !== undefined) showHintLetters.value = settings.showHintLetters
       if (settings.playIntroTune !== undefined) playIntroTune.value = settings.playIntroTune
+      if (settings.timerShort !== undefined) timerShort.value = settings.timerShort
+      if (settings.timerMedium !== undefined) timerMedium.value = settings.timerMedium
+      if (settings.timerLong !== undefined) timerLong.value = settings.timerLong
     } catch (e) {
       console.error('Failed to load saved settings:', e)
     }
@@ -127,7 +151,12 @@ onMounted(() => {
 function handleKeyDown(event) {
   if (event.key === 'Enter') {
     event.preventDefault()
-    handleStartGame()
+    // If join dialog is active, press the "Deelnemen" button instead
+    if (showJoinDialog.value) {
+      handleJoinRoom()
+    } else {
+      handleStartGame()
+    }
   }
 }
 
@@ -145,7 +174,10 @@ function handleStartGame() {
     player2Name: player2Name.value || 'Speler 2',
     wordLength: wordLength.value,
     showHintLetters: showHintLetters.value,
-    playIntroTune: playIntroTune.value
+    playIntroTune: playIntroTune.value,
+    timerShort: timerShort.value,
+    timerMedium: timerMedium.value,
+    timerLong: timerLong.value
   }
   
   // Save settings to localStorage
@@ -162,7 +194,10 @@ function handleCreateRoom() {
     player2Name: player2Name.value || 'Speler 2',
     wordLength: wordLength.value,
     showHintLetters: showHintLetters.value,
-    playIntroTune: playIntroTune.value
+    playIntroTune: playIntroTune.value,
+    timerShort: timerShort.value,
+    timerMedium: timerMedium.value,
+    timerLong: timerLong.value
   }
   
   // Save settings to localStorage
@@ -265,6 +300,40 @@ onUnmounted(() => {
   font-size: 1rem;
   user-select: text;
   caret-color: auto;
+}
+
+.timer-settings {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.timer-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 100px;
+}
+
+.timer-input-group label {
+  font-size: 0.875rem;
+  margin-bottom: 0;
+}
+
+.timer-input-group input[type="number"] {
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 2px solid #4a5568;
+  background: #2d3748;
+  color: #f3f4f6;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.timer-input-group input[type="number"]:focus {
+  outline: none;
+  border-color: #fbbf24;
 }
 
 .word-length-select {

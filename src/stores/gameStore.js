@@ -5,12 +5,6 @@ import { io } from 'socket.io-client'
 
 const MAX_ATTEMPTS = 5
 
-function getTimerDuration(wordLen) {
-  if (wordLen <= 7) return 14
-  if (wordLen <= 9) return 19
-  return 24 // wordLen === 10
-}
-
 export const useGameStore = defineStore('game', () => {
   // State
   const player1 = ref({ name: 'Speler 1', score: 0 })
@@ -25,6 +19,18 @@ export const useGameStore = defineStore('game', () => {
   const timeRemaining = ref(14)
   const isTimerActive = ref(false)
   const showHintLetters = ref(true)
+  
+  // Custom timer durations (default: 14, 19, 24)
+  const timerShort = ref(14)  // For words 5-7 letters
+  const timerMedium = ref(19) // For words 8-9 letters
+  const timerLong = ref(24)   // For words 10 letters
+  
+  // Helper function to get timer duration based on word length
+  function getTimerDuration(wordLen) {
+    if (wordLen <= 7) return timerShort.value
+    if (wordLen <= 9) return timerMedium.value
+    return timerLong.value
+  }
   const wordList = ref([])
   const checkWordList = ref([])
   const gameStarted = ref(false)
@@ -160,6 +166,12 @@ export const useGameStore = defineStore('game', () => {
     player2.value.score = 0
     wordLength.value = settings.wordLength
     showHintLetters.value = settings.showHintLetters
+    
+    // Apply custom timer settings if provided
+    if (settings.timerShort !== undefined) timerShort.value = settings.timerShort
+    if (settings.timerMedium !== undefined) timerMedium.value = settings.timerMedium
+    if (settings.timerLong !== undefined) timerLong.value = settings.timerLong
+    
     activePlayer.value = 1
     gameStarted.value = true
     showGrid.value = false
