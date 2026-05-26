@@ -169,6 +169,11 @@ export const useGameStore = defineStore('game', () => {
     } else {
       startNewWord()
     }
+    
+    // Emit initial game state for multiplayer
+    if (isMultiplayer.value && isHost.value) {
+      emitGameState()
+    }
   }
 
   function addLetter(letter) {
@@ -1053,7 +1058,8 @@ export const useGameStore = defineStore('game', () => {
     })
 
     socket.value.on('gameState', (state) => {
-      if (!isHost.value || isProcessingGuess.value) {
+      // Only guests should update from received state
+      if (!isHost.value) {
         updateFromGameState(state)
       }
     })
@@ -1096,7 +1102,10 @@ export const useGameStore = defineStore('game', () => {
       timeRemaining: timeRemaining.value,
       isTimerActive: isTimerActive.value,
       showHintLetters: showHintLetters.value,
-      gameStarted: gameStarted.value
+      gameStarted: gameStarted.value,
+      showGrid: showGrid.value,
+      showOverlay: showOverlay.value,
+      overlayMessage: overlayMessage.value
     }
     
     socket.value.emit('updateGameState', { roomId: roomId.value, gameState: state })
@@ -1116,6 +1125,13 @@ export const useGameStore = defineStore('game', () => {
     isTimerActive.value = state.isTimerActive
     showHintLetters.value = state.showHintLetters
     gameStarted.value = state.gameStarted
+    showGrid.value = state.showGrid || gameStarted.value
+    
+    // Sync overlay state
+    if (state.showOverlay !== undefined) {
+      showOverlay.value = state.showOverlay
+      overlayMessage.value = state.overlayMessage || ''
+    }
   }
 
   function isMyTurn() {

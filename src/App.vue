@@ -15,6 +15,7 @@
         <div class="room-code">
           <p>Kamercode:</p>
           <div class="code-display">{{ gameStore.roomId }}</div>
+          <button @click="copyRoomCode" class="btn btn-copy">{{ copyButtonText }}</button>
           <p class="code-instruction">Deel deze code met je medespeler</p>
         </div>
         <button @click="handleCancelRoom" class="btn btn-secondary">Annuleren</button>
@@ -67,6 +68,7 @@ const currentInvalidWord = ref('')
 const duplicateWord = ref(false)
 const wrongFirstLetter = ref(false)
 const pendingGameSettings = ref(null)
+const copyButtonText = ref('Kopieer code')
 let dialogJustOpened = false
 
 // Display invalid word with IJ normalization
@@ -147,6 +149,22 @@ function handleJoinRoom(code: string) {
 function handleCancelRoom() {
   gameStore.resetMultiplayer()
   showStartup.value = true
+}
+
+function copyRoomCode() {
+  if (gameStore.roomId) {
+    navigator.clipboard.writeText(gameStore.roomId).then(() => {
+      copyButtonText.value = 'Gekopieerd!'
+      setTimeout(() => {
+        copyButtonText.value = 'Kopieer code'
+      }, 2000)
+    }).catch(() => {
+      copyButtonText.value = 'Fout'
+      setTimeout(() => {
+        copyButtonText.value = 'Kopieer code'
+      }, 2000)
+    })
+  }
 }
 
 function handleNewWord() {
@@ -420,8 +438,20 @@ body {
   letter-spacing: 0.5rem;
   padding: 1.5rem 2rem;
   border-radius: 8px;
-  margin: 1rem 0;
+  margin: 1rem 0 0.5rem 0;
   border: 2px solid #fbbf24;
+}
+
+.btn-copy {
+  background: #22c55e;
+  color: white;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.btn-copy:hover {
+  background: #16a34a;
 }
 
 .code-instruction {
