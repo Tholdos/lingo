@@ -363,6 +363,9 @@ export const useGameStore = defineStore('game', () => {
     
     // Check if won
     if (guess === targetWord.value) {
+      // Stop the timer immediately
+      stopTimer()
+      
       // Enable victory mode for animations
       isVictoryMode.value = true
       
