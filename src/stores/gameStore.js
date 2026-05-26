@@ -425,11 +425,11 @@ export const useGameStore = defineStore('game', () => {
     currentColumn.value = 0
   }
 
-  function switchPlayer(isTimeout = false, isInvalidWord = false) {
+  function switchPlayer(isTimeout = false) {
     stopTimer()
     
-    // Clear current row if timeout or invalid word
-    if (isTimeout || isInvalidWord) {
+    // Clear current row if timeout
+    if (isTimeout) {
       clearCurrentRow()
       
       // For multiplayer, emit state immediately after clearing
@@ -597,9 +597,33 @@ export const useGameStore = defineStore('game', () => {
   function retryInvalidWord() {
     stopTimer()
     
-    // Invalid word means turn switches to other player
-    // Pass true as second parameter to clear the current row
-    switchPlayer(false, true)
+    // Clear the current row (restores hints)
+    clearCurrentRow()
+    
+    // Play turnover sound (non-blocking)
+    playTurnSwitchSound()
+    playTurnOverSound()
+    
+    // Switch to the other player
+    activePlayer.value = activePlayer.value === 1 ? 2 : 1
+    
+    // DON'T increment currentRow - stay on the same row for retry
+    // currentColumn is already reset by clearCurrentRow()
+    
+    // Start timer immediately so new player can start typing
+    startTimer()
+    
+    // Reveal bonus letter asynchronously without blocking
+    sleep(1500).then(() => {
+      if (showHintLetters.value) {
+        revealBonusLetter()
+      }
+    })
+    
+    // Emit game state for multiplayer
+    if (isMultiplayer.value) {
+      emitGameState()
+    }
   }
 
   async function retryAfterTimeout() {
