@@ -94,6 +94,11 @@ export const useGameStore = defineStore('game', () => {
     activePlayer.value === 1 ? player1.value.name : player2.value.name
   )
 
+  // Computed property for current timer max duration
+  const currentTimerDuration = computed(() => {
+    return getTimerDuration(wordLength.value)
+  })
+
   // Timer interval
   let timerInterval = null
 
@@ -1348,6 +1353,7 @@ export const useGameStore = defineStore('game', () => {
     // Computed
     currentGuess,
     activePlayerName,
+    currentTimerDuration,
     
     // Actions
     initializeGrid,

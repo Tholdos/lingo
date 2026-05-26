@@ -26,14 +26,7 @@ import { computed } from 'vue'
 const props = defineProps({
   timeRemaining: Number,
   isActive: Boolean,
-  wordLength: Number
-})
-
-// Calculate max time based on word length (same logic as in gameStore)
-const maxTime = computed(() => {
-  if (props.wordLength <= 7) return 14
-  if (props.wordLength <= 9) return 19
-  return 24 // wordLength === 10
+  maxDuration: Number
 })
 
 const circumference = 2 * Math.PI * 45
@@ -45,7 +38,7 @@ const displayTime = computed(() => {
 
 // Changed to make timer go clockwise (use progress directly instead of 1-progress)
 const dashOffset = computed(() => {
-  const progress = props.timeRemaining / maxTime.value
+  const progress = props.timeRemaining / props.maxDuration
   return circumference * progress
 })
 </script>
