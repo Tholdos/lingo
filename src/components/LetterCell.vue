@@ -1,5 +1,5 @@
 <template>
-  <div :class="['letter-cell', stateClass, { active: isActive, victory: isVictoryMode && props.state === 'correct' }]">
+  <div :class="['letter-cell', stateClass, { active: isActive, victory: isVictoryMode && props.state === 'correct' && props.rowIndex === props.winningRow }]">
     <span class="letter-text">{{ displayLetter }}</span>
   </div>
 </template>
@@ -12,7 +12,9 @@ const props = defineProps({
   letter: String,
   state: String,
   isActive: Boolean,
-  isVictoryMode: Boolean
+  isVictoryMode: Boolean,
+  rowIndex: Number,
+  winningRow: Number
 })
 
 const displayLetter = computed(() => {
