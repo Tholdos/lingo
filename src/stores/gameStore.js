@@ -425,26 +425,12 @@ export const useGameStore = defineStore('game', () => {
     currentColumn.value = 0
   }
 
-  function switchPlayer(isTimeout = false) {
+  function switchPlayer() {
     stopTimer()
     
-    // Clear current row if timeout
-    if (isTimeout) {
-      clearCurrentRow()
-      
-      // For multiplayer, emit state immediately after clearing
-      if (isMultiplayer.value) {
-        emitGameState()
-      }
-    }
-    
-    // Play appropriate sound (non-blocking)
-    if (isTimeout) {
-      playTimeoutBuzzer()
-    } else {
-      playTurnSwitchSound()
-      playTurnOverSound()
-    }
+    // Play turnover sounds (non-blocking)
+    playTurnSwitchSound()
+    playTurnOverSound()
     
     activePlayer.value = activePlayer.value === 1 ? 2 : 1
     
@@ -481,8 +467,7 @@ export const useGameStore = defineStore('game', () => {
     startTimer()
     
     // Reveal bonus letter asynchronously without blocking
-    const delay = isTimeout ? 1000 : 1500
-    sleep(delay).then(() => {
+    sleep(1500).then(() => {
       if (showHintLetters.value) {
         revealBonusLetter()
       }
@@ -637,15 +622,38 @@ export const useGameStore = defineStore('game', () => {
         await revealWord()
         return
       } else {
-        // Increment extra guess count and switch to other player
+        // Increment extra guess count
         extraGuessCount.value++
-        switchPlayer(true)
-        return
+        // Fall through to timeout handling below
       }
     }
     
-    // Timeout means turn switches to other player
-    switchPlayer(true)
+    // Clear the current row (restores hints)
+    clearCurrentRow()
+    
+    // Play buzzer sound (non-blocking)
+    playTimeoutBuzzer()
+    
+    // Switch to the other player
+    activePlayer.value = activePlayer.value === 1 ? 2 : 1
+    
+    // DON'T increment currentRow - stay on the same row for retry
+    // currentColumn is already reset by clearCurrentRow()
+    
+    // Start timer immediately so new player can start typing
+    startTimer()
+    
+    // Reveal bonus letter asynchronously without blocking
+    sleep(1000).then(() => {
+      if (showHintLetters.value) {
+        revealBonusLetter()
+      }
+    })
+    
+    // Emit game state for multiplayer
+    if (isMultiplayer.value) {
+      emitGameState()
+    }
   }
 
   async function revealWord() {
