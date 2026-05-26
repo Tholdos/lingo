@@ -671,24 +671,28 @@ export const useGameStore = defineStore('game', () => {
     currentColumn.value = 0
     const row = cells.value[currentRow.value]
     for (let i = 0; i < wordLength.value; i++) {
-      row[i].letter = ''
-      row[i].state = LetterState.Empty
+      row[i] = {
+        letter: '',
+        state: LetterState.Empty
+      }
     }
     
     // Wait 2 seconds before revealing (row is blank during this time)
     await sleep(2000)
     
-    // Now set all letters
+    // Reveal letters one by one with letter and green animation simultaneously
     for (let i = 0; i < wordLength.value; i++) {
-      row[i].letter = targetWord.value[i]
-      row[i].state = LetterState.Empty
-    }
-    
-    // Reveal letters one by one with animation (like correct guess)
-    for (let i = 0; i < wordLength.value; i++) {
-      row[i].state = LetterState.Correct
+      row[i] = {
+        letter: targetWord.value[i],
+        state: LetterState.Correct
+      }
       playLetterSound(LetterState.Correct)
       await sleep(250)
+      
+      // Emit state for multiplayer to see each letter appear
+      if (isMultiplayer.value) {
+        emitGameState()
+      }
     }
     
     // Wait a bit then show message (no victory tune)
