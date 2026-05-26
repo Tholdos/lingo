@@ -422,7 +422,7 @@ export const useGameStore = defineStore('game', () => {
         if (isMultiplayer.value) {
           emitGameState()
         }
-      }, 2000)
+      }, 3000)
       
       isProcessingGuess.value = false
       
