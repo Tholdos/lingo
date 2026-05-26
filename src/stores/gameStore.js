@@ -421,11 +421,11 @@ export const useGameStore = defineStore('game', () => {
     currentColumn.value = 0
   }
 
-  function switchPlayer(isTimeout = false) {
+  function switchPlayer(isTimeout = false, isInvalidWord = false) {
     stopTimer()
     
-    // Clear current row if timeout (and word wasn't complete)
-    if (isTimeout) {
+    // Clear current row if timeout or invalid word
+    if (isTimeout || isInvalidWord) {
       clearCurrentRow()
     }
     
@@ -541,6 +541,11 @@ export const useGameStore = defineStore('game', () => {
     timerInterval = setInterval(async () => {
       if (timeRemaining.value > 0) {
         timeRemaining.value--
+        
+        // Sync timer for multiplayer
+        if (isMultiplayer.value) {
+          emitGameState()
+        }
       } else {
         stopTimer()
         // Check if the current row is complete
@@ -584,7 +589,8 @@ export const useGameStore = defineStore('game', () => {
     stopTimer()
     
     // Invalid word means turn switches to other player
-    switchPlayer()
+    // Pass true as second parameter to clear the current row
+    switchPlayer(false, true)
   }
 
   async function retryAfterTimeout() {
@@ -1045,8 +1051,9 @@ export const useGameStore = defineStore('game', () => {
     })
 
     socket.value.on('gameState', (state) => {
-      // Only guests should update from received state
-      if (!isHost.value) {
+      // Host only updates from guest when it's not their turn
+      // Guest always updates from host
+      if (!isHost.value || (isHost.value && !isMyTurn())) {
         updateFromGameState(state)
       }
     })
