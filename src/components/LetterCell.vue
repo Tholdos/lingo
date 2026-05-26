@@ -1,5 +1,5 @@
 <template>
-  <div :class="['letter-cell', stateClass, { active: isActive }]">
+  <div :class="['letter-cell', stateClass, { active: isActive, victory: isVictoryMode && props.state === 'correct' }]">
     <span class="letter-text">{{ displayLetter }}</span>
   </div>
 </template>
@@ -11,7 +11,8 @@ import { LetterState } from '../types/game'
 const props = defineProps({
   letter: String,
   state: String,
-  isActive: Boolean
+  isActive: Boolean,
+  isVictoryMode: Boolean
 })
 
 const displayLetter = computed(() => {
@@ -48,6 +49,8 @@ const stateClass = computed(() => {
   user-select: none;
   cursor: default;
   outline: none;
+  position: relative;
+  overflow: hidden;
   caret-color: transparent;
   flex-shrink: 0;
 }
@@ -234,6 +237,61 @@ const stateClass = computed(() => {
 .letter-cell.correct {
   background-color: #16a34a;
   border-color: #22c55e;
+}
+
+/* Victory animation for correct letters */
+.letter-cell.correct.victory {
+  animation: victoryTwirl 0.6s ease-in-out, shimmer 2s ease-in-out infinite;
+}
+
+@keyframes victoryTwirl {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(10deg) scale(1.1);
+  }
+  50% {
+    transform: rotate(-10deg) scale(1.1);
+  }
+  75% {
+    transform: rotate(5deg) scale(1.05);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(34, 197, 94, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  }
+}
+
+.letter-cell.correct.victory::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -100%;
+  width: 100%;
+  height: calc(100% + 4px);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  animation: slideShine 1.5s ease-in-out infinite;
+}
+
+@keyframes slideShine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 200%;
+  }
 }
 
 .letter-cell.hint {

@@ -51,6 +51,7 @@
           :letter="cell.letter"
           :state="cell.state"
           :is-active="rowIndex === gameStore.currentRow && colIndex === gameStore.currentColumn"
+          :is-victory-mode="gameStore.isVictoryMode"
         />
       </div>
     </div>

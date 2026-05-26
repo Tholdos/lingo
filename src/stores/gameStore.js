@@ -35,6 +35,7 @@ export const useGameStore = defineStore('game', () => {
   const guessedWords = ref(new Set())
   const extraGuessCount = ref(0)
   const roundStartPlayer = ref(1)
+  const isVictoryMode = ref(false)
   
   // Multiplayer
   const socket = ref(null)
@@ -129,6 +130,7 @@ export const useGameStore = defineStore('game', () => {
     guessedWords.value = new Set()  // Clear guessed words for new round
     extraGuessCount.value = 0
     roundStartPlayer.value = activePlayer.value
+    isVictoryMode.value = false
     
     initializeGrid()
     
@@ -331,6 +333,9 @@ export const useGameStore = defineStore('game', () => {
     
     // Check if won
     if (guess === targetWord.value) {
+      // Enable victory mode for animations
+      isVictoryMode.value = true
+      
       // Play victory tune
       playVictoryTune()
       
@@ -626,15 +631,19 @@ export const useGameStore = defineStore('game', () => {
       }
     }
     
-    // Use the last row for reveal
+    // Clear the last row completely
     currentRow.value = MAX_ATTEMPTS - 1
     currentColumn.value = 0
     const row = cells.value[currentRow.value]
+    for (let i = 0; i < wordLength.value; i++) {
+      row[i].letter = ''
+      row[i].state = LetterState.Empty
+    }
     
-    // Wait 2 seconds before revealing
+    // Wait 2 seconds before revealing (row is blank during this time)
     await sleep(2000)
     
-    // First set all letters
+    // Now set all letters
     for (let i = 0; i < wordLength.value; i++) {
       row[i].letter = targetWord.value[i]
       row[i].state = LetterState.Empty
@@ -1146,6 +1155,7 @@ export const useGameStore = defineStore('game', () => {
     isConnected,
     waitingForPlayer,
     isHost,
+    isVictoryMode,
     
     // Computed
     currentGuess,
