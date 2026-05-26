@@ -619,9 +619,6 @@ export const useGameStore = defineStore('game', () => {
   async function revealWord() {
     stopTimer()
     
-    // Wait 2 seconds before revealing
-    await sleep(2000)
-    
     // Shift all rows up once more and use last row for reveal
     for (let r = 0; r < MAX_ATTEMPTS - 1; r++) {
       for (let c = 0; c < wordLength.value; c++) {
@@ -633,6 +630,9 @@ export const useGameStore = defineStore('game', () => {
     currentRow.value = MAX_ATTEMPTS - 1
     currentColumn.value = 0
     const row = cells.value[currentRow.value]
+    
+    // Wait 2 seconds before revealing
+    await sleep(2000)
     
     // First set all letters
     for (let i = 0; i < wordLength.value; i++) {

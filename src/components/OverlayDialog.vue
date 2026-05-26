@@ -114,6 +114,9 @@ onUnmounted(() => {
   -webkit-tap-highlight-color: transparent;
   min-height: 48px;
   min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {
