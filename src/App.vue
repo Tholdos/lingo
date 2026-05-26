@@ -318,9 +318,11 @@ body {
   -webkit-tap-highlight-color: transparent;
   min-height: 48px;
   min-width: 100px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 @media (max-width: 768px) {

@@ -346,7 +346,11 @@ export const useGameStore = defineStore('game', () => {
       }
       
       overlayMessage.value = `${activePlayerName.value} heeft het woord geraden!`
-      showOverlay.value = true
+      
+      // Delay overlay to show victory animations first
+      setTimeout(() => {
+        showOverlay.value = true
+      }, 2000)
       
       isProcessingGuess.value = false
       
