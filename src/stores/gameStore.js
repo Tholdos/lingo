@@ -4,12 +4,11 @@ import { LetterState } from '@/types/game'
 import { io } from 'socket.io-client'
 
 const MAX_ATTEMPTS = 5
-const GRID_ROWS = 7 // 5 regular + 1 extra per player + 1 for reveal
 
 function getTimerDuration(wordLen) {
   if (wordLen <= 7) return 14
-  if (wordLen <= 9) return 20
-  return 25 // wordLen === 10
+  if (wordLen <= 9) return 19
+  return 24 // wordLen === 10
 }
 
 export const useGameStore = defineStore('game', () => {
@@ -34,7 +33,7 @@ export const useGameStore = defineStore('game', () => {
   const overlayMessage = ref('')
   const isProcessingGuess = ref(false)
   const guessedWords = ref(new Set())
-  const extraGuessUsed = ref({ player1: false, player2: false })
+  const extraGuessCount = ref(0)
   const roundStartPlayer = ref(1)
   
   // Multiplayer
@@ -91,7 +90,7 @@ export const useGameStore = defineStore('game', () => {
 
   // Actions
   function initializeGrid() {
-    cells.value = Array(GRID_ROWS).fill(null).map(() =>
+    cells.value = Array(MAX_ATTEMPTS).fill(null).map(() =>
       Array(wordLength.value).fill(null).map(() => ({
         letter: '',
         state: LetterState.Empty
@@ -128,7 +127,7 @@ export const useGameStore = defineStore('game', () => {
     currentColumn.value = 0  // Start at position 0
     revealedPositions.value = new Set([0])
     guessedWords.value = new Set()  // Clear guessed words for new round
-    extraGuessUsed.value = { player1: false, player2: false }
+    extraGuessCount.value = 0
     roundStartPlayer.value = activePlayer.value
     
     initializeGrid()
@@ -354,19 +353,18 @@ export const useGameStore = defineStore('game', () => {
     }
     
     // Check if we're in extra guess territory (row 5+)
-    const currentPlayerKey = activePlayer.value === 1 ? 'player1' : 'player2'
-    if (currentRow.value >= MAX_ATTEMPTS) {
-      // Mark extra guess as used for current player
-      extraGuessUsed.value[currentPlayerKey] = true
+    if (currentRow.value >= MAX_ATTEMPTS - 1) {
+      // Increment extra guess counter
+      extraGuessCount.value++
       
-      // Check if both players used their extra guess
-      if (extraGuessUsed.value.player1 && extraGuessUsed.value.player2) {
+      // Check if we've used both extra guesses
+      if (extraGuessCount.value >= 2) {
         // Reveal the word - no points awarded
         await revealWord()
         isProcessingGuess.value = false
         return 'revealed'
       } else {
-        // Switch to other player for their extra guess
+        // Switch to other player for next extra guess
         await switchPlayer()
         isProcessingGuess.value = false
         
@@ -442,8 +440,29 @@ export const useGameStore = defineStore('game', () => {
     
     activePlayer.value = activePlayer.value === 1 ? 2 : 1
     
-    // Move to next row (no shifting needed with 7 rows)
+    // Move to next row
     currentRow.value++
+    
+    // Shift rows up if we're past the 5th row (index 4)
+    if (currentRow.value >= MAX_ATTEMPTS) {
+      // Shift rows up and clear the last row
+      for (let r = 0; r < MAX_ATTEMPTS - 1; r++) {
+        for (let c = 0; c < wordLength.value; c++) {
+          cells.value[r][c] = { ...cells.value[r + 1][c] }
+        }
+      }
+      
+      // Clear last row
+      for (let c = 0; c < wordLength.value; c++) {
+        cells.value[MAX_ATTEMPTS - 1][c] = {
+          letter: '',
+          state: LetterState.Empty
+        }
+      }
+      
+      // Stay on the last row after shifting
+      currentRow.value = MAX_ATTEMPTS - 1
+    }
     
     currentColumn.value = 0
     
@@ -578,18 +597,17 @@ export const useGameStore = defineStore('game', () => {
   async function retryAfterTimeout() {
     stopTimer()
     
-    // If we're in extra guess territory, mark it as used
-    if (currentRow.value >= MAX_ATTEMPTS) {
-      const currentPlayerKey = activePlayer.value === 1 ? 'player1' : 'player2'
-      extraGuessUsed.value[currentPlayerKey] = true
+    // If we're in extra guess territory, increment counter
+    if (currentRow.value >= MAX_ATTEMPTS - 1) {
+      extraGuessCount.value++
       
-      // Check if both players used their extra guess
-      if (extraGuessUsed.value.player1 && extraGuessUsed.value.player2) {
+      // Check if we've used both extra guesses
+      if (extraGuessCount.value >= 2) {
         // Reveal the word - no points awarded
         await revealWord()
         return
       } else {
-        // Switch to other player for their extra guess
+        // Switch to other player for next extra guess
         await switchPlayer(true)
         return
       }
@@ -616,8 +634,15 @@ export const useGameStore = defineStore('game', () => {
   async function revealWord() {
     stopTimer()
     
-    // Move to next row for reveal
-    currentRow.value++
+    // Shift all rows up once more and use last row for reveal
+    for (let r = 0; r < MAX_ATTEMPTS - 1; r++) {
+      for (let c = 0; c < wordLength.value; c++) {
+        cells.value[r][c] = { ...cells.value[r + 1][c] }
+      }
+    }
+    
+    // Use the last row for reveal
+    currentRow.value = MAX_ATTEMPTS - 1
     currentColumn.value = 0
     
     // Reveal all letters of the target word
