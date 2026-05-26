@@ -167,10 +167,19 @@ export const useGameStore = defineStore('game', () => {
     wordLength.value = settings.wordLength
     showHintLetters.value = settings.showHintLetters
     
-    // Apply custom timer settings if provided
-    if (settings.timerShort !== undefined) timerShort.value = settings.timerShort
-    if (settings.timerMedium !== undefined) timerMedium.value = settings.timerMedium
-    if (settings.timerLong !== undefined) timerLong.value = settings.timerLong
+    // Apply custom timer duration if provided, otherwise use defaults
+    if (settings.timerDuration !== undefined) {
+      // Set all three timer values based on provided duration
+      // User can customize, so we use their value for all word lengths
+      const customDuration = settings.timerDuration
+      if (wordLength.value <= 7) {
+        timerShort.value = customDuration
+      } else if (wordLength.value <= 9) {
+        timerMedium.value = customDuration
+      } else {
+        timerLong.value = customDuration
+      }
+    }
     
     activePlayer.value = 1
     gameStarted.value = true

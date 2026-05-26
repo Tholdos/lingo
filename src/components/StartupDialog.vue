@@ -48,21 +48,8 @@
       </div>
 
       <div class="form-group">
-        <label>Timer instellingen (seconden):</label>
-        <div class="timer-settings">
-          <div class="timer-input-group">
-            <label>5-7 letters:</label>
-            <input v-model.number="timerShort" type="number" min="5" max="60" />
-          </div>
-          <div class="timer-input-group">
-            <label>8-9 letters:</label>
-            <input v-model.number="timerMedium" type="number" min="5" max="60" />
-          </div>
-          <div class="timer-input-group">
-            <label>10 letters:</label>
-            <input v-model.number="timerLong" type="number" min="5" max="60" />
-          </div>
-        </div>
+        <label>Timer (seconden):</label>
+        <input v-model.number="timerDuration" type="number" min="5" max="60" class="timer-input" />
       </div>
 
       <div class="form-group">
@@ -104,7 +91,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 
 const emit = defineEmits(['close', 'start', 'createRoom', 'joinRoom'])
 
@@ -113,13 +100,23 @@ const player2Name = ref('Speler 2')
 const wordLength = ref(6)
 const showHintLetters = ref(true)
 const playIntroTune = ref(true)
-const timerShort = ref(14)
-const timerMedium = ref(19)
-const timerLong = ref(24)
+const timerDuration = ref(14)
 const showJoinDialog = ref(false)
 const joinCode = ref('')
 const player1Input = ref(null)
 const player2Input = ref(null)
+
+// Helper function to get default timer for word length
+function getDefaultTimer(len) {
+  if (len <= 7) return 14
+  if (len <= 9) return 19
+  return 24
+}
+
+// Watch wordLength and update timer to default for that length
+watch(wordLength, (newLength) => {
+  timerDuration.value = getDefaultTimer(newLength)
+})
 
 onMounted(() => {
   // Load saved settings from localStorage
@@ -132,13 +129,14 @@ onMounted(() => {
       if (settings.wordLength) wordLength.value = settings.wordLength
       if (settings.showHintLetters !== undefined) showHintLetters.value = settings.showHintLetters
       if (settings.playIntroTune !== undefined) playIntroTune.value = settings.playIntroTune
-      if (settings.timerShort !== undefined) timerShort.value = settings.timerShort
-      if (settings.timerMedium !== undefined) timerMedium.value = settings.timerMedium
-      if (settings.timerLong !== undefined) timerLong.value = settings.timerLong
+      // Don't load timerDuration - let it default based on word length
     } catch (e) {
       console.error('Failed to load saved settings:', e)
     }
   }
+  
+  // Set initial timer based on word length
+  timerDuration.value = getDefaultTimer(wordLength.value)
   
   if (player1Input.value) {
     player1Input.value.focus()
@@ -175,13 +173,17 @@ function handleStartGame() {
     wordLength: wordLength.value,
     showHintLetters: showHintLetters.value,
     playIntroTune: playIntroTune.value,
-    timerShort: timerShort.value,
-    timerMedium: timerMedium.value,
-    timerLong: timerLong.value
+    timerDuration: timerDuration.value
   }
   
-  // Save settings to localStorage
-  localStorage.setItem('lingoGameSettings', JSON.stringify(settings))
+  // Save settings to localStorage (except timer - it auto-updates based on word length)
+  localStorage.setItem('lingoGameSettings', JSON.stringify({
+    player1Name: settings.player1Name,
+    player2Name: settings.player2Name,
+    wordLength: settings.wordLength,
+    showHintLetters: settings.showHintLetters,
+    playIntroTune: settings.playIntroTune
+  }))
   
   cleanup()
   emit('start', settings)
@@ -195,13 +197,17 @@ function handleCreateRoom() {
     wordLength: wordLength.value,
     showHintLetters: showHintLetters.value,
     playIntroTune: playIntroTune.value,
-    timerShort: timerShort.value,
-    timerMedium: timerMedium.value,
-    timerLong: timerLong.value
+    timerDuration: timerDuration.value
   }
   
-  // Save settings to localStorage
-  localStorage.setItem('lingoGameSettings', JSON.stringify(settings))
+  // Save settings to localStorage (except timer - it auto-updates based on word length)
+  localStorage.setItem('lingoGameSettings', JSON.stringify({
+    player1Name: settings.player1Name,
+    player2Name: settings.player2Name,
+    wordLength: settings.wordLength,
+    showHintLetters: settings.showHintLetters,
+    playIntroTune: settings.playIntroTune
+  }))
   
   cleanup()
   emit('createRoom', settings)
@@ -302,36 +308,17 @@ onUnmounted(() => {
   caret-color: auto;
 }
 
-.timer-settings {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.timer-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
-  min-width: 100px;
-}
-
-.timer-input-group label {
-  font-size: 0.875rem;
-  margin-bottom: 0;
-}
-
-.timer-input-group input[type="number"] {
-  padding: 0.5rem;
+.timer-input {
+  width: 100%;
+  padding: 0.75rem;
   border-radius: 6px;
   border: 2px solid #4a5568;
   background: #2d3748;
   color: #f3f4f6;
   font-size: 1rem;
-  width: 100%;
 }
 
-.timer-input-group input[type="number"]:focus {
+.timer-input:focus {
   outline: none;
   border-color: #fbbf24;
 }
