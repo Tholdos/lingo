@@ -379,14 +379,17 @@ export const useGameStore = defineStore('game', () => {
         extraGuessCount.value++
         switchPlayer()
         isProcessingGuess.value = false
-        
-        if (isMultiplayer.value) {
-          emitGameState()
-        }
-        
         return 'switched'
       }
     } else {
+      // In multiplayer, wrong guess means turn switches to other player
+      if (isMultiplayer.value) {
+        switchPlayer()
+        isProcessingGuess.value = false
+        return 'switched'
+      }
+      
+      // In single player, move to next row and continue
       currentRow.value++
       currentColumn.value = 0
       copyHintsToNextRow()
@@ -479,6 +482,11 @@ export const useGameStore = defineStore('game', () => {
         revealBonusLetter()
       }
     })
+    
+    // Emit game state for multiplayer
+    if (isMultiplayer.value) {
+      emitGameState()
+    }
   }
 
   async function revealBonusLetter() {
@@ -574,6 +582,14 @@ export const useGameStore = defineStore('game', () => {
   function retryInvalidWord() {
     stopTimer()
     
+    // In multiplayer, invalid word means turn switches to other player
+    if (isMultiplayer.value) {
+      // Switch to the other player
+      switchPlayer()
+      return
+    }
+    
+    // In single player, same player gets another chance
     // Play turnover sound (non-blocking)
     playTurnSwitchSound()
     playTurnOverSound()
@@ -610,6 +626,13 @@ export const useGameStore = defineStore('game', () => {
       }
     }
     
+    // In multiplayer, timeout means turn switches to other player
+    if (isMultiplayer.value) {
+      switchPlayer(true)
+      return
+    }
+    
+    // In single player, same player gets another chance
     // Play buzzer sound (non-blocking)
     playTimeoutBuzzer()
     
