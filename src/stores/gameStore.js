@@ -352,19 +352,17 @@ export const useGameStore = defineStore('game', () => {
       return 'won'
     }
     
-    // Check if we're in extra guess territory (row 5+)
+    // Check if we're at row 4 (5th attempt or beyond)
     if (currentRow.value >= MAX_ATTEMPTS - 1) {
-      // Increment extra guess counter
-      extraGuessCount.value++
-      
-      // Check if we've used both extra guesses
+      // Check if we've already used our 2 extra guesses
       if (extraGuessCount.value >= 2) {
         // Reveal the word - no points awarded
         await revealWord()
         isProcessingGuess.value = false
         return 'revealed'
       } else {
-        // Switch to other player for next extra guess
+        // Increment extra guess count and switch players
+        extraGuessCount.value++
         await switchPlayer()
         isProcessingGuess.value = false
         
@@ -374,18 +372,6 @@ export const useGameStore = defineStore('game', () => {
         
         return 'switched'
       }
-    }
-    
-    // Move to next row or switch player after regular attempts
-    if (currentRow.value >= MAX_ATTEMPTS - 1) {
-      await switchPlayer()
-      isProcessingGuess.value = false
-      
-      if (isMultiplayer.value) {
-        emitGameState()
-      }
-      
-      return 'switched'
     } else {
       currentRow.value++
       currentColumn.value = 0
@@ -597,17 +583,16 @@ export const useGameStore = defineStore('game', () => {
   async function retryAfterTimeout() {
     stopTimer()
     
-    // If we're in extra guess territory, increment counter
+    // If we're at row 4, check if we should reveal or continue
     if (currentRow.value >= MAX_ATTEMPTS - 1) {
-      extraGuessCount.value++
-      
-      // Check if we've used both extra guesses
+      // Check if we've already used our 2 extra guesses
       if (extraGuessCount.value >= 2) {
         // Reveal the word - no points awarded
         await revealWord()
         return
       } else {
-        // Switch to other player for next extra guess
+        // Increment extra guess count and switch to other player
+        extraGuessCount.value++
         await switchPlayer(true)
         return
       }
@@ -644,16 +629,26 @@ export const useGameStore = defineStore('game', () => {
     // Use the last row for reveal
     currentRow.value = MAX_ATTEMPTS - 1
     currentColumn.value = 0
+    const row = cells.value[currentRow.value]
     
-    // Reveal all letters of the target word
+    // First set all letters
     for (let i = 0; i < wordLength.value; i++) {
-      cells.value[currentRow.value][i].letter = targetWord.value[i]
-      cells.value[currentRow.value][i].state = LetterState.Hint
-      await sleep(100)
+      row[i].letter = targetWord.value[i]
+      row[i].state = LetterState.Empty
     }
     
-    // Wait a bit then show message and advance
-    await sleep(1500)
+    // Reveal letters one by one with animation (like correct guess)
+    for (let i = 0; i < wordLength.value; i++) {
+      row[i].state = LetterState.Correct
+      playLetterSound(LetterState.Correct)
+      await sleep(250)
+    }
+    
+    // Play victory tune
+    playVictoryTune()
+    
+    // Wait a bit then show message
+    await sleep(1000)
     
     // Set active player back to round start player for next word
     activePlayer.value = roundStartPlayer.value
