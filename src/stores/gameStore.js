@@ -355,6 +355,9 @@ export const useGameStore = defineStore('game', () => {
       // Delay overlay to show victory animations first
       setTimeout(() => {
         showOverlay.value = true
+        if (isMultiplayer.value) {
+          emitGameState()
+        }
       }, 2000)
       
       isProcessingGuess.value = false
@@ -500,6 +503,11 @@ export const useGameStore = defineStore('game', () => {
         playBonusLetterSound()
         cells.value[currentRow.value][i].letter = targetWord.value[i]
         cells.value[currentRow.value][i].state = LetterState.Hint
+        
+        // Emit state for multiplayer
+        if (isMultiplayer.value) {
+          emitGameState()
+        }
         return
       }
     }
@@ -644,6 +652,11 @@ export const useGameStore = defineStore('game', () => {
     
     overlayMessage.value = `Niemand heeft het woord geraden. Het woord was: ${targetWord.value.replace(/\u0178/g, 'IJ')}`
     showOverlay.value = true
+    
+    // Emit state for multiplayer
+    if (isMultiplayer.value) {
+      emitGameState()
+    }
   }
 
   function sleep(ms) {
@@ -1079,7 +1092,11 @@ export const useGameStore = defineStore('game', () => {
       gameStarted: gameStarted.value,
       showGrid: showGrid.value,
       showOverlay: showOverlay.value,
-      overlayMessage: overlayMessage.value
+      overlayMessage: overlayMessage.value,
+      extraGuessCount: extraGuessCount.value,
+      roundStartPlayer: roundStartPlayer.value,
+      isVictoryMode: isVictoryMode.value,
+      guessedWords: Array.from(guessedWords.value)
     }
     
     socket.value.emit('updateGameState', { roomId: roomId.value, gameState: state })
@@ -1106,6 +1123,12 @@ export const useGameStore = defineStore('game', () => {
       showOverlay.value = state.showOverlay
       overlayMessage.value = state.overlayMessage || ''
     }
+    
+    // Sync additional game state
+    if (state.extraGuessCount !== undefined) extraGuessCount.value = state.extraGuessCount
+    if (state.roundStartPlayer !== undefined) roundStartPlayer.value = state.roundStartPlayer
+    if (state.isVictoryMode !== undefined) isVictoryMode.value = state.isVictoryMode
+    if (state.guessedWords) guessedWords.value = new Set(state.guessedWords)
   }
 
   function isMyTurn() {
