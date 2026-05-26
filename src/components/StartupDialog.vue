@@ -49,7 +49,7 @@
 
       <div class="form-group">
         <label>Timer (seconden):</label>
-        <input v-model.number="timerDuration" type="number" min="5" max="60" class="timer-input" />
+        <input v-model.number="displayedTimerDuration" type="number" min="6" max="61" class="timer-input" />
       </div>
 
       <div class="form-group">
@@ -91,7 +91,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 
 const emit = defineEmits(['close', 'start', 'createRoom', 'joinRoom'])
 
@@ -105,6 +105,14 @@ const showJoinDialog = ref(false)
 const joinCode = ref('')
 const player1Input = ref(null)
 const player2Input = ref(null)
+
+// Computed property to display timer + 1 to user (more intuitive)
+const displayedTimerDuration = computed({
+  get: () => timerDuration.value + 1,
+  set: (value) => {
+    timerDuration.value = value - 1
+  }
+})
 
 // Helper function to get default timer for word length
 function getDefaultTimer(len) {
