@@ -16,7 +16,7 @@
       @keydown="handleMobileKeydown"
     />
     
-    <div v-if="gameStore.isMultiplayer" class="multiplayer-status">
+    <div v-if="gameStore.isMultiplayer && !gameStore.showGrid" class="multiplayer-status">
       <div v-if="gameStore.waitingForPlayer" class="waiting">
         Wachten op speler... kamercode: <strong>{{ gameStore.roomId }}</strong>
       </div>

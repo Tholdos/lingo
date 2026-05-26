@@ -60,8 +60,8 @@ const stateClass = computed(() => {
 /* Word length specific sizing */
 .word-length-5 .letter-cell,
 .word-length-6 .letter-cell {
-  width: 45px;
-  height: 45px;
+  width: 40px;
+  height: 40px;
 }
 
 .word-length-7 .letter-cell {
@@ -86,8 +86,8 @@ const stateClass = computed(() => {
 
 @media (max-width: 768px) {
   .letter-cell {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-width: 1.5px;
   }
   
@@ -114,8 +114,8 @@ const stateClass = computed(() => {
 
 @media (max-width: 480px) {
   .letter-cell {
-    width: 32px;
-    height: 32px;
+    width: 29px;
+    height: 29px;
   }
   
   .word-length-7 .letter-cell {
@@ -317,8 +317,8 @@ const stateClass = computed(() => {
   
   .word-length-5 .letter-cell,
   .word-length-6 .letter-cell {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
   }
   
   .word-length-7 .letter-cell {

@@ -5,12 +5,34 @@
       
       <div class="form-group">
         <label>Speler 1:</label>
-        <input v-model="player1Name" type="text" placeholder="Speler 1" ref="player1Input" @focus="selectAll" />
+        <input 
+          v-model="player1Name" 
+          type="text" 
+          placeholder="Speler 1" 
+          ref="player1Input" 
+          @focus="selectAll"
+          inputmode="text"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="words"
+          spellcheck="false"
+        />
       </div>
 
       <div class="form-group">
         <label>Speler 2:</label>
-        <input v-model="player2Name" type="text" placeholder="Speler 2" ref="player2Input" @focus="selectAll" />
+        <input 
+          v-model="player2Name" 
+          type="text" 
+          placeholder="Speler 2" 
+          ref="player2Input" 
+          @focus="selectAll"
+          inputmode="text"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="words"
+          spellcheck="false"
+        />
       </div>
 
       <div class="form-group">
@@ -46,7 +68,16 @@
       </div>
 
       <div v-if="showJoinDialog" class="join-dialog">
-        <input v-model="joinCode" type="text" placeholder="Kamercode" />
+        <input 
+          v-model="joinCode" 
+          type="text" 
+          placeholder="Kamercode"
+          inputmode="text"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="characters"
+          spellcheck="false"
+        />
         <button @click="handleJoinRoom" class="btn btn-primary">Deelnemen</button>
         <button @click="handleCancelJoin" class="btn btn-secondary">Annuleren</button>
       </div>
@@ -173,11 +204,13 @@ onUnmounted(() => {
   bottom: 0;
   background: rgba(0, 0, 0, 0.8);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 1000;
   user-select: none;
   caret-color: transparent;
+  overflow-y: auto;
+  padding: 2rem 0;
 }
 
 .dialog-content {
@@ -189,6 +222,7 @@ onUnmounted(() => {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   user-select: none;
   caret-color: transparent;
+  margin: auto 0;
 }
 
 .dialog-title {
