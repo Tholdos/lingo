@@ -126,8 +126,19 @@ function handleStartGame() {
 }
 
 function handleCreateRoom() {
+  const settings = {
+    player1Name: player1Name.value || 'Speler 1',
+    player2Name: player2Name.value || 'Speler 2',
+    wordLength: wordLength.value,
+    showHintLetters: showHintLetters.value,
+    playIntroTune: playIntroTune.value
+  }
+  
+  // Save settings to localStorage
+  localStorage.setItem('lingoGameSettings', JSON.stringify(settings))
+  
   cleanup()
-  emit('createRoom')
+  emit('createRoom', settings)
   emit('close')
 }
 

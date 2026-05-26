@@ -8,6 +8,19 @@
       @join-room="handleJoinRoom"
     />
 
+    <!-- Waiting for player screen -->
+    <div v-if="gameStore.waitingForPlayer" class="waiting-screen">
+      <div class="waiting-content">
+        <h1>Wachten op speler...</h1>
+        <div class="room-code">
+          <p>Kamercode:</p>
+          <div class="code-display">{{ gameStore.roomId }}</div>
+          <p class="code-instruction">Deel deze code met je medespeler</p>
+        </div>
+        <button @click="handleCancelRoom" class="btn btn-secondary">Annuleren</button>
+      </div>
+    </div>
+
     <GameGrid v-if="gameStore.gameStarted" />
 
     <OverlayDialog
@@ -53,6 +66,7 @@ const invalidWordDialog = ref(false)
 const currentInvalidWord = ref('')
 const duplicateWord = ref(false)
 const wrongFirstLetter = ref(false)
+const pendingGameSettings = ref(null)
 let dialogJustOpened = false
 
 // Display invalid word with IJ normalization
@@ -88,6 +102,17 @@ watch(() => gameStore.showOverlay, (newValue) => {
   }
 })
 
+// Watch for player joining the room to start the game
+watch(() => gameStore.waitingForPlayer, (newValue, oldValue) => {
+  if (oldValue === true && newValue === false && pendingGameSettings.value) {
+    // Player joined, start the game with saved settings
+    setTimeout(() => {
+      handleStart(pendingGameSettings.value)
+      pendingGameSettings.value = null
+    }, 500)
+  }
+})
+
 onMounted(async () => {
   // Load word lists
   try {
@@ -110,24 +135,18 @@ function handleStart(settings: { player1Name: string, player2Name: string, wordL
   gameStore.startGame(settings)
 }
 
-function handleCreateRoom() {
+function handleCreateRoom(settings: { player1Name: string, player2Name: string, wordLength: number, showHintLetters: boolean, playIntroTune?: boolean }) {
+  pendingGameSettings.value = settings
   gameStore.createRoom()
-  // Start game when player joins
-  setTimeout(() => {
-    if (!gameStore.waitingForPlayer) {
-      const settings = {
-        player1Name: 'Speler 1',
-        player2Name: 'Speler 2',
-        wordLength: 6,
-        showHintLetters: true
-      }
-      gameStore.startGame(settings)
-    }
-  }, 1000)
 }
 
 function handleJoinRoom(code: string) {
   gameStore.joinRoom(code)
+}
+
+function handleCancelRoom() {
+  gameStore.resetMultiplayer()
+  showStartup.value = true
 }
 
 function handleNewWord() {
@@ -353,5 +372,78 @@ body {
 
 .btn-secondary:hover {
   background: #2d3748;
+}
+
+/* Waiting screen styles */
+.waiting-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+}
+
+.waiting-content {
+  text-align: center;
+  padding: 3rem;
+  background: #1a202c;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.waiting-content h1 {
+  color: #fbbf24;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+}
+
+.room-code {
+  margin: 2rem 0;
+}
+
+.room-code p {
+  color: #f3f4f6;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.code-display {
+  background: #0f172a;
+  color: #fbbf24;
+  font-size: 2.5rem;
+  font-weight: bold;
+  letter-spacing: 0.5rem;
+  padding: 1.5rem 2rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  border: 2px solid #fbbf24;
+}
+
+.code-instruction {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .waiting-content {
+    padding: 2rem;
+    max-width: 90%;
+  }
+  
+  .waiting-content h1 {
+    font-size: 1.5rem;
+  }
+  
+  .code-display {
+    font-size: 2rem;
+    letter-spacing: 0.3rem;
+    padding: 1rem 1.5rem;
+  }
 }
 </style>
