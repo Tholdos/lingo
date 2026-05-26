@@ -44,7 +44,7 @@
     
     <!-- Game grid with dynamic sizing based on word length -->
     <div v-if="gameStore.showGrid" class="game-grid" ref="gameGridRef" :class="'word-length-' + gameStore.wordLength">
-      <div v-for="(row, rowIndex) in gameStore.cells" :key="rowIndex" class="row">
+      <div v-for="(row, rowIndex) in visibleCells" :key="rowIndex" class="row">
         <LetterCell 
           v-for="(cell, colIndex) in row" 
           :key="colIndex"
@@ -66,7 +66,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import PlayerPanel from './PlayerPanel.vue'
 import LetterCell from './LetterCell.vue'
@@ -79,6 +79,9 @@ const gameGridRef = ref(null)
 let lastInputValue = ''
 let keyboardVisible = false
 let initialViewportHeight = window.innerHeight
+
+// Only display the first 5 rows (extra turns are handled via shifting)
+const visibleCells = computed(() => gameStore.cells.slice(0, 5))
 
 function focusMobileInput() {
   if (gameStore.gameStarted && mobileInput.value) {

@@ -92,7 +92,8 @@ export const useGameStore = defineStore('game', () => {
 
   // Actions
   function initializeGrid() {
-    cells.value = Array(MAX_ATTEMPTS).fill(null).map(() =>
+    // Create 7 rows to accommodate 5 initial attempts + 2 extra turns
+    cells.value = Array(7).fill(null).map(() =>
       Array(wordLength.value).fill(null).map(() => ({
         letter: '',
         state: LetterState.Empty
@@ -458,24 +459,24 @@ export const useGameStore = defineStore('game', () => {
     // Move to next row
     currentRow.value++
     
-    // Shift rows up if we're past the 5th row (index 4)
+    // Shift rows up if we're past the 5th row (index 4) to keep only 5 rows visible
     if (currentRow.value >= MAX_ATTEMPTS) {
-      // Shift rows up and clear the last row
-      for (let r = 0; r < MAX_ATTEMPTS - 1; r++) {
+      // Shift all 7 rows up by one, moving rows 1-6 into positions 0-5
+      for (let r = 0; r < 6; r++) {
         for (let c = 0; c < wordLength.value; c++) {
           cells.value[r][c] = { ...cells.value[r + 1][c] }
         }
       }
       
-      // Clear last row
+      // Clear the last row (row 6)
       for (let c = 0; c < wordLength.value; c++) {
-        cells.value[MAX_ATTEMPTS - 1][c] = {
+        cells.value[6][c] = {
           letter: '',
           state: LetterState.Empty
         }
       }
       
-      // Stay on the last row after shifting
+      // Stay on row 4 after shifting (the visible last row)
       currentRow.value = MAX_ATTEMPTS - 1
     }
     
@@ -707,13 +708,13 @@ export const useGameStore = defineStore('game', () => {
     await sleep(1000)
     
     // Shift all rows up once more and use last row for reveal
-    for (let r = 0; r < MAX_ATTEMPTS - 1; r++) {
+    for (let r = 0; r < 6; r++) {
       for (let c = 0; c < wordLength.value; c++) {
         cells.value[r][c] = { ...cells.value[r + 1][c] }
       }
     }
     
-    // Clear the last row completely
+    // Clear the last row (row 6) completely
     currentRow.value = MAX_ATTEMPTS - 1
     currentColumn.value = 0
     const row = cells.value[currentRow.value]
