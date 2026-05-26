@@ -275,9 +275,9 @@ export const useGameStore = defineStore('game', () => {
 
     isProcessingGuess.value = true
     
-    // If we're at row 4+ and this is the first guess attempt, mark extra turn as used immediately
+    // If we're at row 5+ and this is the first guess attempt, mark extra turn as used immediately
     // This ensures that ANY guess attempt (valid, invalid-accepted, or invalid-rejected) counts as the extra turn
-    if (currentRow.value >= MAX_ATTEMPTS - 1) {
+    if (currentRow.value >= MAX_ATTEMPTS) {
       const currentPlayerUsedExtra = activePlayer.value === 1 ? player1UsedExtraGuess.value : player2UsedExtraGuess.value
       
       if (!currentPlayerUsedExtra) {
@@ -391,8 +391,8 @@ export const useGameStore = defineStore('game', () => {
       return 'won'
     }
     
-    // Check if we're at row 4 (5th attempt or beyond)
-    if (currentRow.value >= MAX_ATTEMPTS - 1) {
+    // Check if we're at row 5 (6th attempt or beyond)
+    if (currentRow.value >= MAX_ATTEMPTS) {
       // Check if both players have now used their extra turns
       if (player1UsedExtraGuess.value && player2UsedExtraGuess.value) {
         // Both players used their extra turns, reveal word
@@ -608,8 +608,8 @@ export const useGameStore = defineStore('game', () => {
   function retryInvalidWord() {
     stopTimer()
     
-    // If we're at row 4 and both players have used their extra turns, reveal word
-    if (currentRow.value >= MAX_ATTEMPTS - 1) {
+    // If we're at row 5 and both players have used their extra turns, reveal word
+    if (currentRow.value >= MAX_ATTEMPTS) {
       if (player1UsedExtraGuess.value && player2UsedExtraGuess.value) {
         revealWord()
         return
@@ -648,8 +648,8 @@ export const useGameStore = defineStore('game', () => {
   async function retryAfterTimeout() {
     stopTimer()
     
-    // If we're at row 4+, mark the extra turn as used for current player (timeout counts as using the turn)
-    if (currentRow.value >= MAX_ATTEMPTS - 1) {
+    // If we're at row 5+, mark the extra turn as used for current player (timeout counts as using the turn)
+    if (currentRow.value >= MAX_ATTEMPTS) {
       const currentPlayerUsedExtra = activePlayer.value === 1 ? player1UsedExtraGuess.value : player2UsedExtraGuess.value
       
       if (!currentPlayerUsedExtra) {
