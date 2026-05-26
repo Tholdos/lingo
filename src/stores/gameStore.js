@@ -276,17 +276,26 @@ export const useGameStore = defineStore('game', () => {
 
     isProcessingGuess.value = true
     
-    // If we're at row 5+ and this is the first guess attempt, mark extra turn as used immediately
-    // This ensures that ANY guess attempt (valid, invalid-accepted, or invalid-rejected) counts as the extra turn
-    if (currentRow.value >= MAX_ATTEMPTS) {
-      const currentPlayerUsedExtra = activePlayer.value === 1 ? player1UsedExtraGuess.value : player2UsedExtraGuess.value
+    // If we're at row 4, determine if this is an extra turn attempt
+    // The starting player completes all 5 initial attempts (rows 0-4), then switches
+    // After that, any player at row 4 is using their extra turn
+    if (currentRow.value === MAX_ATTEMPTS - 1) {
+      const isStartingPlayer = activePlayer.value === roundStartPlayer.value
+      const otherPlayerNum = activePlayer.value === 1 ? 2 : 1
+      const otherPlayerUsedExtra = otherPlayerNum === 1 ? player1UsedExtraGuess.value : player2UsedExtraGuess.value
       
-      if (!currentPlayerUsedExtra) {
-        // Mark the extra turn as used RIGHT NOW, before validation
-        if (activePlayer.value === 1) {
-          player1UsedExtraGuess.value = true
-        } else {
-          player2UsedExtraGuess.value = true
+      // If current player is NOT the starting player OR the other player has used their extra turn,
+      // then this is an extra turn attempt
+      if (!isStartingPlayer || otherPlayerUsedExtra) {
+        const currentPlayerUsedExtra = activePlayer.value === 1 ? player1UsedExtraGuess.value : player2UsedExtraGuess.value
+        
+        if (!currentPlayerUsedExtra) {
+          // Mark the extra turn as used RIGHT NOW, before validation
+          if (activePlayer.value === 1) {
+            player1UsedExtraGuess.value = true
+          } else {
+            player2UsedExtraGuess.value = true
+          }
         }
       }
     }
@@ -410,7 +419,16 @@ export const useGameStore = defineStore('game', () => {
     
     // Wrong guess - check if we should switch players based on current row
     if (currentRow.value === MAX_ATTEMPTS - 1) {
-      // We're at row 4 (5th attempt), switch players for extra turns
+      // We're at row 4 (5th attempt)
+      // Check if both players have now used their extra turns
+      if (player1UsedExtraGuess.value && player2UsedExtraGuess.value) {
+        // Both used their extra turns, reveal word
+        await revealWord()
+        isProcessingGuess.value = false
+        return 'revealed'
+      }
+      
+      // Switch players for next attempt (either continuing extra turns or starting them)
       switchPlayer()
       isProcessingGuess.value = false
       return 'switched'
@@ -617,8 +635,8 @@ export const useGameStore = defineStore('game', () => {
   function retryInvalidWord() {
     stopTimer()
     
-    // If we're at row 5 and both players have used their extra turns, reveal word
-    if (currentRow.value >= MAX_ATTEMPTS) {
+    // If we're at row 4 and both players have used their extra turns, reveal word
+    if (currentRow.value === MAX_ATTEMPTS - 1) {
       if (player1UsedExtraGuess.value && player2UsedExtraGuess.value) {
         revealWord()
         return
@@ -657,24 +675,32 @@ export const useGameStore = defineStore('game', () => {
   async function retryAfterTimeout() {
     stopTimer()
     
-    // If we're at row 5+, mark the extra turn as used for current player (timeout counts as using the turn)
-    if (currentRow.value >= MAX_ATTEMPTS) {
-      const currentPlayerUsedExtra = activePlayer.value === 1 ? player1UsedExtraGuess.value : player2UsedExtraGuess.value
+    // If we're at row 4, determine if this is an extra turn attempt
+    if (currentRow.value === MAX_ATTEMPTS - 1) {
+      const isStartingPlayer = activePlayer.value === roundStartPlayer.value
+      const otherPlayerNum = activePlayer.value === 1 ? 2 : 1
+      const otherPlayerUsedExtra = otherPlayerNum === 1 ? player1UsedExtraGuess.value : player2UsedExtraGuess.value
       
-      if (!currentPlayerUsedExtra) {
-        // Mark current player's extra turn as used
-        if (activePlayer.value === 1) {
-          player1UsedExtraGuess.value = true
-        } else {
-          player2UsedExtraGuess.value = true
+      // If current player is NOT the starting player OR the other player has used their extra turn,
+      // then this is an extra turn attempt
+      if (!isStartingPlayer || otherPlayerUsedExtra) {
+        const currentPlayerUsedExtra = activePlayer.value === 1 ? player1UsedExtraGuess.value : player2UsedExtraGuess.value
+        
+        if (!currentPlayerUsedExtra) {
+          // Mark current player's extra turn as used
+          if (activePlayer.value === 1) {
+            player1UsedExtraGuess.value = true
+          } else {
+            player2UsedExtraGuess.value = true
+          }
         }
-      }
-      
-      // Check if both players have now used their extra turns
-      if (player1UsedExtraGuess.value && player2UsedExtraGuess.value) {
-        // Both players used their extra turns, reveal word
-        await revealWord()
-        return
+        
+        // Check if both players have now used their extra turns
+        if (player1UsedExtraGuess.value && player2UsedExtraGuess.value) {
+          // Both players used their extra turns, reveal word
+          await revealWord()
+          return
+        }
       }
     }
     
