@@ -409,6 +409,28 @@ export const useGameStore = defineStore('game', () => {
     } else {
       // Move to next row and continue (same player)
       currentRow.value++
+      
+      // Shift rows up if we're past the 5th row (index 4) to keep only 5 rows visible
+      if (currentRow.value >= MAX_ATTEMPTS) {
+        // Shift all 7 rows up by one, moving rows 1-6 into positions 0-5
+        for (let r = 0; r < 6; r++) {
+          for (let c = 0; c < wordLength.value; c++) {
+            cells.value[r][c] = { ...cells.value[r + 1][c] }
+          }
+        }
+        
+        // Clear the last row (row 6)
+        for (let c = 0; c < wordLength.value; c++) {
+          cells.value[6][c] = {
+            letter: '',
+            state: LetterState.Empty
+          }
+        }
+        
+        // Stay on row 4 after shifting (the visible last row)
+        currentRow.value = MAX_ATTEMPTS - 1
+      }
+      
       currentColumn.value = 0
       copyHintsToNextRow()
       startTimer()
