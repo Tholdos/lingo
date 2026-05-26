@@ -382,14 +382,7 @@ export const useGameStore = defineStore('game', () => {
         return 'switched'
       }
     } else {
-      // In multiplayer, wrong guess means turn switches to other player
-      if (isMultiplayer.value) {
-        switchPlayer()
-        isProcessingGuess.value = false
-        return 'switched'
-      }
-      
-      // In single player, move to next row and continue
+      // Move to next row and continue (same player)
       currentRow.value++
       currentColumn.value = 0
       copyHintsToNextRow()
@@ -582,30 +575,8 @@ export const useGameStore = defineStore('game', () => {
   function retryInvalidWord() {
     stopTimer()
     
-    // In multiplayer, invalid word means turn switches to other player
-    if (isMultiplayer.value) {
-      // Switch to the other player
-      switchPlayer()
-      return
-    }
-    
-    // In single player, same player gets another chance
-    // Play turnover sound (non-blocking)
-    playTurnSwitchSound()
-    playTurnOverSound()
-    
-    // Clear the current row (restores hints)
-    clearCurrentRow()
-    
-    // Start timer immediately so player can start typing
-    startTimer()
-    
-    // Reveal bonus letter asynchronously without blocking
-    sleep(1500).then(() => {
-      if (showHintLetters.value) {
-        revealBonusLetter()
-      }
-    })
+    // Invalid word means turn switches to other player
+    switchPlayer()
   }
 
   async function retryAfterTimeout() {
@@ -626,28 +597,8 @@ export const useGameStore = defineStore('game', () => {
       }
     }
     
-    // In multiplayer, timeout means turn switches to other player
-    if (isMultiplayer.value) {
-      switchPlayer(true)
-      return
-    }
-    
-    // In single player, same player gets another chance
-    // Play buzzer sound (non-blocking)
-    playTimeoutBuzzer()
-    
-    // Clear the current row (restores hints)
-    clearCurrentRow()
-    
-    // Start timer immediately so player can start typing
-    startTimer()
-    
-    // Reveal bonus letter asynchronously without blocking
-    sleep(1000).then(() => {
-      if (showHintLetters.value) {
-        revealBonusLetter()
-      }
-    })
+    // Timeout means turn switches to other player
+    switchPlayer(true)
   }
 
   async function revealWord() {
