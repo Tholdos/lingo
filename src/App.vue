@@ -168,6 +168,11 @@ function copyRoomCode() {
 }
 
 function handleNewWord() {
+  // Only host controls game flow in multiplayer
+  if (gameStore.isMultiplayer && !gameStore.isHost) {
+    return
+  }
+  
   gameStore.closeOverlay()
   gameStore.startNewWord()
 }

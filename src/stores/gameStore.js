@@ -334,6 +334,11 @@ export const useGameStore = defineStore('game', () => {
       row[i].state = finalStates[i]
       playLetterSound(finalStates[i])
       await sleep(250)
+      
+      // Emit state for multiplayer to sync letter reveal animation
+      if (isMultiplayer.value) {
+        emitGameState()
+      }
     }
     
     // Check if won
@@ -577,6 +582,11 @@ export const useGameStore = defineStore('game', () => {
 
   function closeOverlay() {
     showOverlay.value = false
+    
+    // Emit state for multiplayer to sync overlay closing
+    if (isMultiplayer.value) {
+      emitGameState()
+    }
   }
 
   function retryInvalidWord() {
@@ -1096,9 +1106,9 @@ export const useGameStore = defineStore('game', () => {
     })
 
     socket.value.on('gameState', (state) => {
-      // Host only updates from guest when it's not their turn
-      // Guest always updates from host
-      if (!isHost.value || (isHost.value && !isMyTurn())) {
+      // Always update from received state to keep both players in sync
+      // Don't update if we're currently processing a guess to avoid conflicts
+      if (!isProcessingGuess.value) {
         updateFromGameState(state)
       }
     })
