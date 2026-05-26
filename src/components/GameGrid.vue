@@ -34,6 +34,7 @@
         v-if="gameStore.showGrid"
         :time-remaining="gameStore.timeRemaining"
         :is-active="gameStore.isTimerActive"
+        :word-length="gameStore.wordLength"
       />
       <PlayerPanel 
         :player="gameStore.player2" 
