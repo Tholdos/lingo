@@ -108,8 +108,6 @@ const dashOffset = computed(() => {
   
   .timer-text {
     font-size: 1.4rem;
-    /* Nudge down slightly for mobile font rendering */
-    transform: translate(-50%, calc(-50% + 1px));
   }
 }
 
@@ -121,8 +119,6 @@ const dashOffset = computed(() => {
   
   .timer-text {
     font-size: 1.1rem;
-    /* Nudge down slightly for mobile font rendering */
-    transform: translate(-50%, calc(-50% + 1px));
   }
 }
 

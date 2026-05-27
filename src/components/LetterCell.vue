@@ -182,9 +182,6 @@ const stateClass = computed(() => {
 @media (max-width: 768px) {
   .letter-text {
     font-size: 20px;
-    /* Nudge down slightly for mobile font rendering */
-    position: relative;
-    top: 1px;
   }
   
   .word-length-7 .letter-text {
