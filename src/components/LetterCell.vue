@@ -47,7 +47,7 @@ const stateClass = computed(() => {
   border: 2px solid #333;
   border-radius: 4px;
   background-color: #1a1a1a;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
   user-select: none;
   cursor: default;
   outline: none;
@@ -160,6 +160,11 @@ const stateClass = computed(() => {
   line-height: 1;
   margin: 0;
   padding: 0;
+  vertical-align: baseline;
+  display: inline-block;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transform: translateZ(0);
 }
 
 /* Font size adjustments for longer words */
