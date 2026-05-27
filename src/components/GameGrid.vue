@@ -48,18 +48,20 @@
     </div>
     
     <!-- Game grid with dynamic sizing based on word length -->
-    <div v-if="gameStore.showGrid" class="game-grid" ref="gameGridRef" :class="['word-length-' + gameStore.wordLength, { 'reveal-animation': gameStore.isAnimatingReveal }]">
-      <div v-for="(row, rowIndex) in visibleCells" :key="rowIndex" class="row">
-        <LetterCell 
-          v-for="(cell, colIndex) in row" 
-          :key="colIndex"
-          :letter="cell.letter"
-          :state="cell.state"
-          :is-active="rowIndex === gameStore.currentRow && colIndex === gameStore.currentColumn"
-          :is-victory-mode="gameStore.isVictoryMode"
-          :row-index="rowIndex"
-          :winning-row="gameStore.currentRow"
-        />
+    <div v-if="gameStore.showGrid" class="grid-wrapper">
+      <div class="game-grid" ref="gameGridRef" :class="['word-length-' + gameStore.wordLength, { 'reveal-animation': gameStore.isAnimatingReveal }]">
+        <div v-for="(row, rowIndex) in visibleCells" :key="rowIndex" class="row">
+          <LetterCell 
+            v-for="(cell, colIndex) in row" 
+            :key="colIndex"
+            :letter="cell.letter"
+            :state="cell.state"
+            :is-active="rowIndex === gameStore.currentRow && colIndex === gameStore.currentColumn"
+            :is-victory-mode="gameStore.isVictoryMode"
+            :row-index="rowIndex"
+            :winning-row="gameStore.currentRow"
+          />
+        </div>
       </div>
     </div>
     <!-- END OF CHANGED SECTION -->
@@ -310,11 +312,30 @@ onUnmounted(() => {
   }
 }
 
+.grid-wrapper {
+  overflow: hidden;
+  max-width: 100%;
+}
+
 .game-grid {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
   max-width: 100%;
+}
+
+/* Reveal answer animation - slide entire grid up */
+.game-grid.reveal-animation {
+  animation: gridSlideUp 0.75s ease-out;
+}
+
+@keyframes gridSlideUp {
+  0% {
+    transform: translateY(60px);
+  }
+  100% {
+    transform: translateY(0);
+  }
 }
 
 /* Adjust gap for longer words */
@@ -329,24 +350,22 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-/* Reveal answer animation - only when .reveal-animation class is present */
-.game-grid.reveal-animation .row {
-  animation: rowShiftUp 0.75s ease;
-}
-
-@keyframes rowShiftUp {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-60px);
-    opacity: 0.5;
-  }
-}
-
 @media (max-width: 768px) {
   .game-grid {
     gap: 0.3rem;
+  }
+  
+  .game-grid.reveal-animation {
+    animation: gridSlideUpTablet 0.75s ease-out;
+  }
+  
+  @keyframes gridSlideUpTablet {
+    0% {
+      transform: translateY(45px);
+    }
+    100% {
+      transform: translateY(0);
+    }
   }
   
   .row {
@@ -362,6 +381,19 @@ onUnmounted(() => {
 @media (max-width: 480px) {
   .game-grid {
     gap: 0.25rem;
+  }
+  
+  .game-grid.reveal-animation {
+    animation: gridSlideUpMobile 0.75s ease-out;
+  }
+  
+  @keyframes gridSlideUpMobile {
+    0% {
+      transform: translateY(38px);
+    }
+    100% {
+      transform: translateY(0);
+    }
   }
   
   .word-length-9 .row,
@@ -383,14 +415,6 @@ onUnmounted(() => {
   .game-container {
     padding: 0.5rem;
     gap: 0.25rem;
-  }
-  
-  .game-grid {
-    gap: 0.3rem;
-  }
-  
-  .row {
-    gap: 0.3rem;
   }
   
   .multiplayer-status {
