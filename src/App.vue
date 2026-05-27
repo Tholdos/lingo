@@ -228,26 +228,17 @@ async function handleKeyPress(event) {
       currentInvalidWord.value = gameStore.currentGuess
       duplicateWord.value = false
       wrongFirstLetter.value = false
-      // In multiplayer, only show dialog to host
-      if (!gameStore.isMultiplayer || gameStore.isHost) {
-        invalidWordDialog.value = true
-      }
+      invalidWordDialog.value = true
     } else if (result === 'duplicate') {
       currentInvalidWord.value = gameStore.currentGuess
       duplicateWord.value = true
       wrongFirstLetter.value = false
-      // In multiplayer, only show dialog to host
-      if (!gameStore.isMultiplayer || gameStore.isHost) {
-        invalidWordDialog.value = true
-      }
+      invalidWordDialog.value = true
     } else if (result === 'wrongFirstLetter') {
       currentInvalidWord.value = gameStore.currentGuess
       duplicateWord.value = false
       wrongFirstLetter.value = true
-      // In multiplayer, only show dialog to host
-      if (!gameStore.isMultiplayer || gameStore.isHost) {
-        invalidWordDialog.value = true
-      }
+      invalidWordDialog.value = true
     }
   } else if (event.key === 'Backspace') {
     event.preventDefault()
