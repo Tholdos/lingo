@@ -147,6 +147,17 @@ watch(() => gameStore.invalidWordData, (newValue) => {
   }
 })
 
+// Watch for bypass flag to auto-submit in multiplayer when host accepts invalid word
+watch(() => gameStore.bypassNextValidation, async (newValue) => {
+  if (newValue && gameStore.isMultiplayer && gameStore.isMyTurn()) {
+    // Close dialog first
+    invalidWordDialog.value = false
+    // Wait a tick then submit
+    await new Promise(resolve => setTimeout(resolve, 10))
+    await gameStore.submitGuess()
+  }
+})
+
 onMounted(async () => {
   // Load word lists
   try {
@@ -295,16 +306,28 @@ async function handleKeyPress(event) {
 async function acceptInvalidWord() {
   // Clear invalid word data
   gameStore.invalidWordData = null
-  // Process the word as if it were valid
+  // Set flag to bypass validation on next submit
+  gameStore.bypassNextValidation = true
+  // Close the dialog
   invalidWordDialog.value = false
-  // Wait a tick to ensure dialog is closed before processing
-  await new Promise(resolve => setTimeout(resolve, 10))
-  await gameStore.submitGuess(true) // bypass dictionary check (this will emit state)
+  // Emit immediately for multiplayer sync
+  if (gameStore.isMultiplayer) {
+    gameStore.emitGameState()
+  }
+  // If it's our turn in single player, submit immediately
+  if (!gameStore.isMultiplayer) {
+    await new Promise(resolve => setTimeout(resolve, 10))
+    await gameStore.submitGuess(true)
+  }
 }
 
 function rejectInvalidWord() {
   // Clear invalid word data
   gameStore.invalidWordData = null
+  // Emit immediately for multiplayer sync
+  if (gameStore.isMultiplayer) {
+    gameStore.emitGameState()
+  }
   // Clear the state (this will emit state for multiplayer)
   gameStore.retryInvalidWord()
   // Close the dialog

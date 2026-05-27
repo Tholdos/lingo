@@ -40,13 +40,12 @@ export const useGameStore = defineStore('game', () => {
   const overlayMessage = ref('')
   const isProcessingGuess = ref(false)
   const guessedWords = ref(new Set())
-  const player1UsedExtraGuess = ref(false)
-  const player2UsedExtraGuess = ref(false)
-  const validGuessCount = ref(0)  // Tracks the number of valid wrong guesses
+  const turnSwitchCount = ref(0)  // Tracks number of turn switches in current round
   const roundStartPlayer = ref(1)
   const isVictoryMode = ref(false)
   const isAnimatingReveal = ref(false)
   const invalidWordData = ref(null)  // { word: string, type: 'invalid' | 'duplicate' | 'wrongFirstLetter' }
+  const bypassNextValidation = ref(false)  // Flag to bypass dictionary check on next submit (for accepted invalid words)
   
   // Multiplayer
   const socket = ref(null)
@@ -155,9 +154,8 @@ export const useGameStore = defineStore('game', () => {
     currentColumn.value = 0  // Start at position 0
     revealedPositions.value = new Set([0])
     guessedWords.value = new Set()  // Clear guessed words for new round
-    player1UsedExtraGuess.value = false
-    player2UsedExtraGuess.value = false
-    validGuessCount.value = 0  // Reset valid guess counter
+    turnSwitchCount.value = 0  // Reset turn switch counter
+    bypassNextValidation.value = false  // Reset bypass flag
     roundStartPlayer.value = activePlayer.value
     isVictoryMode.value = false
     
@@ -317,19 +315,10 @@ export const useGameStore = defineStore('game', () => {
 
     isProcessingGuess.value = true
     
-    // If we've already had 5 valid wrong guesses, we're in extra turn mode
-    // Mark the current player's extra turn as used immediately
-    if (validGuessCount.value >= 5) {
-      const currentPlayerUsedExtra = activePlayer.value === 1 ? player1UsedExtraGuess.value : player2UsedExtraGuess.value
-      
-      if (!currentPlayerUsedExtra) {
-        // Mark the extra turn as used RIGHT NOW, before validation
-        if (activePlayer.value === 1) {
-          player1UsedExtraGuess.value = true
-        } else {
-          player2UsedExtraGuess.value = true
-        }
-      }
+    // Check if we should bypass validation due to accepted invalid word
+    if (bypassNextValidation.value) {
+      bypassDictionaryCheck = true
+      bypassNextValidation.value = false
     }
     
     // Check if word starts with the correct first letter (which is always revealed)
@@ -457,36 +446,20 @@ export const useGameStore = defineStore('game', () => {
       return 'won'
     }
     
-    // Increment valid guess count (we've processed a valid wrong guess)
-    validGuessCount.value++
-    
-    // Check if we've had 5 valid guesses and both players used their extra turns
-    if (validGuessCount.value >= 5 && player1UsedExtraGuess.value && player2UsedExtraGuess.value) {
-      // Both players used their extra turns, reveal word
-      await revealWord()
-      isProcessingGuess.value = false
-      return 'revealed'
-    }
-    
-    // Check if we're at row 5 (6th attempt or beyond) - this happens after shifting
-    if (currentRow.value >= MAX_ATTEMPTS) {
-      // This shouldn't happen with the new logic, but keep as safety
-      switchPlayer()
-      isProcessingGuess.value = false
-      return 'switched'
-    }
-    
-    // Wrong guess - check if we should switch players
-    if (validGuessCount.value >= 5) {
-      // We're in extra turn mode, always switch players after each guess
-      switchPlayer()
-      isProcessingGuess.value = false
-      return 'switched'
-    } else if (currentRow.value === MAX_ATTEMPTS - 1) {
-      // We're at row 4 (5th row), switch players
-      switchPlayer()
-      isProcessingGuess.value = false
-      return 'switched'
+    // Wrong guess - check row and turn switch count to determine action
+    if (currentRow.value >= 4) {
+      // Row 4+: Wrong word triggers turn switch
+      if (turnSwitchCount.value >= 2) {
+        // Already had 2 turn switches, reveal word
+        await revealWord()
+        isProcessingGuess.value = false
+        return 'revealed'
+      } else {
+        // Switch players
+        switchPlayer()
+        isProcessingGuess.value = false
+        return 'switched'
+      }
     } else {
       // Rows 0-3: Move to next row and continue with same player
       currentRow.value++
@@ -530,6 +503,9 @@ export const useGameStore = defineStore('game', () => {
 
   function switchPlayer() {
     stopTimer()
+    
+    // Increment turn switch counter
+    turnSwitchCount.value++
     
     // Play turnover sounds (non-blocking)
     playTurnSwitchSound()
@@ -699,13 +675,15 @@ export const useGameStore = defineStore('game', () => {
     // Clear invalid word data
     invalidWordData.value = null
     
-    // If we're in extra turn mode and both players have used their extra turns, reveal word
-    if (validGuessCount.value >= 5) {
-      if (player1UsedExtraGuess.value && player2UsedExtraGuess.value) {
-        revealWord()
-        return
-      }
+    // Check if we've already had 2 turn switches
+    if (turnSwitchCount.value >= 2) {
+      // Reveal word instead of switching again
+      revealWord()
+      return
     }
+    
+    // Increment turn switch counter
+    turnSwitchCount.value++
     
     // Clear the current row (restores hints)
     clearCurrentRow()
@@ -739,26 +717,15 @@ export const useGameStore = defineStore('game', () => {
   async function retryAfterTimeout() {
     stopTimer()
     
-    // If we're in extra turn mode (after 5 valid guesses), mark the current player's extra turn as used
-    if (validGuessCount.value >= 5) {
-      const currentPlayerUsedExtra = activePlayer.value === 1 ? player1UsedExtraGuess.value : player2UsedExtraGuess.value
-      
-      if (!currentPlayerUsedExtra) {
-        // Mark current player's extra turn as used
-        if (activePlayer.value === 1) {
-          player1UsedExtraGuess.value = true
-        } else {
-          player2UsedExtraGuess.value = true
-        }
-      }
-      
-      // Check if both players have now used their extra turns
-      if (player1UsedExtraGuess.value && player2UsedExtraGuess.value) {
-        // Both players used their extra turns, reveal word
-        await revealWord()
-        return
-      }
+    // Check if we've already had 2 turn switches
+    if (turnSwitchCount.value >= 2) {
+      // Reveal word instead of switching again
+      await revealWord()
+      return
     }
+    
+    // Increment turn switch counter
+    turnSwitchCount.value++
     
     // Clear the current row (restores hints)
     clearCurrentRow()
@@ -794,26 +761,50 @@ export const useGameStore = defineStore('game', () => {
     // Set animation flag
     isAnimatingReveal.value = true
     
-    // Play reveal answer sound (duration ~750ms) and shift rows simultaneously
+    // Play reveal answer sound (duration ~750ms)
     playRevealAnswerSound()
     
-    // Shift all rows up immediately (animation runs for 750ms to sync with sound)
-    for (let r = 0; r < 6; r++) {
-      for (let c = 0; c < wordLength.value; c++) {
-        cells.value[r][c] = { ...cells.value[r + 1][c] }
+    // Check if there's an empty row available (first 5 visible rows)
+    let revealRowIndex = -1
+    for (let r = 0; r < MAX_ATTEMPTS; r++) {
+      const rowIsEmpty = cells.value[r].every(cell => cell.letter === '' || cell.state === LetterState.Hint)
+      if (rowIsEmpty) {
+        revealRowIndex = r
+        break
       }
     }
     
-    // Clear the last row (row 6) completely
-    currentRow.value = MAX_ATTEMPTS - 1
-    currentColumn.value = 0
-    const row = cells.value[currentRow.value]
-    for (let i = 0; i < wordLength.value; i++) {
-      row[i] = {
-        letter: '',
-        state: LetterState.Empty
+    // If no empty row available, shift rows up and use the last visible row
+    if (revealRowIndex === -1) {
+      // Shift all rows up immediately (animation runs for 750ms to sync with sound)
+      for (let r = 0; r < 6; r++) {
+        for (let c = 0; c < wordLength.value; c++) {
+          cells.value[r][c] = { ...cells.value[r + 1][c] }
+        }
+      }
+      
+      // Clear the last row (row 6) completely and use row 4 for reveal
+      revealRowIndex = MAX_ATTEMPTS - 1
+      const row = cells.value[revealRowIndex]
+      for (let i = 0; i < wordLength.value; i++) {
+        row[i] = {
+          letter: '',
+          state: LetterState.Empty
+        }
+      }
+    } else {
+      // Empty row found, clear it for reveal
+      const row = cells.value[revealRowIndex]
+      for (let i = 0; i < wordLength.value; i++) {
+        row[i] = {
+          letter: '',
+          state: LetterState.Empty
+        }
       }
     }
+    
+    currentRow.value = revealRowIndex
+    currentColumn.value = 0
     
     // Emit state for multiplayer
     if (isMultiplayer.value) {
@@ -832,6 +823,7 @@ export const useGameStore = defineStore('game', () => {
     await sleep(blankRowDelay)
     
     // Reveal letters one by one with letter and green animation simultaneously
+    const row = cells.value[revealRowIndex]
     for (let i = 0; i < wordLength.value; i++) {
       row[i] = {
         letter: targetWord.value[i],
@@ -1321,13 +1313,12 @@ export const useGameStore = defineStore('game', () => {
       showGrid: showGrid.value,
       showOverlay: showOverlay.value,
       overlayMessage: overlayMessage.value,
-      player1UsedExtraGuess: player1UsedExtraGuess.value,
-      player2UsedExtraGuess: player2UsedExtraGuess.value,
-      validGuessCount: validGuessCount.value,
+      turnSwitchCount: turnSwitchCount.value,
       roundStartPlayer: roundStartPlayer.value,
       isVictoryMode: isVictoryMode.value,
       isAnimatingReveal: isAnimatingReveal.value,
       invalidWordData: invalidWordData.value,
+      bypassNextValidation: bypassNextValidation.value,
       guessedWords: Array.from(guessedWords.value)
     }
     
@@ -1357,13 +1348,12 @@ export const useGameStore = defineStore('game', () => {
     }
     
     // Sync additional game state
-    if (state.player1UsedExtraGuess !== undefined) player1UsedExtraGuess.value = state.player1UsedExtraGuess
-    if (state.player2UsedExtraGuess !== undefined) player2UsedExtraGuess.value = state.player2UsedExtraGuess
-    if (state.validGuessCount !== undefined) validGuessCount.value = state.validGuessCount
+    if (state.turnSwitchCount !== undefined) turnSwitchCount.value = state.turnSwitchCount
     if (state.roundStartPlayer !== undefined) roundStartPlayer.value = state.roundStartPlayer
     if (state.isVictoryMode !== undefined) isVictoryMode.value = state.isVictoryMode
     if (state.isAnimatingReveal !== undefined) isAnimatingReveal.value = state.isAnimatingReveal
     if (state.invalidWordData !== undefined) invalidWordData.value = state.invalidWordData
+    if (state.bypassNextValidation !== undefined) bypassNextValidation.value = state.bypassNextValidation
     if (state.guessedWords) guessedWords.value = new Set(state.guessedWords)
   }
 
@@ -1418,7 +1408,9 @@ export const useGameStore = defineStore('game', () => {
     isVictoryMode,
     isAnimatingReveal,
     invalidWordData,
+    bypassNextValidation,
     soundEnabled,
+    turnSwitchCount,
     
     // Computed
     currentGuess,
@@ -1445,6 +1437,7 @@ export const useGameStore = defineStore('game', () => {
     stopTimer,
     startTimer,
     retryInvalidWord,
-    toggleSound
+    toggleSound,
+    emitGameState
   }
 })
