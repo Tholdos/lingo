@@ -2,6 +2,11 @@
   <div class="game-container" ref="gameContainer" @click="focusMobileInput">
     <h1 class="lingo-title">LINGO</h1>
     
+    <!-- Speaker icon for sound toggle -->
+    <div class="speaker-icon-container">
+      <SpeakerIcon />
+    </div>
+    
     <!-- Hidden input for mobile keyboard -->
     <input 
       ref="mobileInput"
@@ -71,6 +76,7 @@ import { useGameStore } from '../stores/gameStore'
 import PlayerPanel from './PlayerPanel.vue'
 import LetterCell from './LetterCell.vue'
 import CircularTimer from './CircularTimer.vue'
+import SpeakerIcon from './SpeakerIcon.vue'
 
 const gameStore = useGameStore()
 const mobileInput = ref(null)
@@ -242,6 +248,20 @@ onUnmounted(() => {
   .lingo-title {
     font-size: 28px;
     margin: 0.25rem 0;
+  }
+}
+
+.speaker-icon-container {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 100;
+}
+
+@media (max-width: 768px) {
+  .speaker-icon-container {
+    top: 0.5rem;
+    right: 0.5rem;
   }
 }
 

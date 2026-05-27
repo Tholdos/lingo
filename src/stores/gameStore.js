@@ -19,6 +19,7 @@ export const useGameStore = defineStore('game', () => {
   const timeRemaining = ref(14)
   const isTimerActive = ref(false)
   const showHintLetters = ref(true)
+  const soundEnabled = ref(true)  // Toggle for all sound effects
   
   // Custom timer durations (default: 14, 19, 24)
   const timerShort = ref(14)  // For words 5-7 letters
@@ -48,6 +49,16 @@ export const useGameStore = defineStore('game', () => {
   // Multiplayer
   const socket = ref(null)
   const roomId = ref(null)
+
+  // Load sound preference from localStorage
+  try {
+    const savedSound = localStorage.getItem('lingoSoundEnabled')
+    if (savedSound !== null) {
+      soundEnabled.value = JSON.parse(savedSound)
+    }
+  } catch (e) {
+    console.error('Failed to load sound preference:', e)
+  }
   const isMultiplayer = ref(false)
   const isHost = ref(false)
   const isConnected = ref(false)
@@ -757,8 +768,9 @@ export const useGameStore = defineStore('game', () => {
     // Play reveal answer sound and shift rows with animation
     playRevealAnswerSound()
     
-    // Wait 1 second for the sound (and allow animation)
-    await sleep(1000)
+    // Wait 1 second for the sound (and allow animation) - skip delay if sound off and not multiplayer
+    const delayTime = (soundEnabled.value || isMultiplayer.value) ? 1000 : 0
+    await sleep(delayTime)
     
     // Shift all rows up once more and use last row for reveal
     for (let r = 0; r < 6; r++) {
@@ -783,8 +795,9 @@ export const useGameStore = defineStore('game', () => {
       emitGameState()
     }
     
-    // Small delay to show blank row
-    await sleep(500)
+    // Small delay to show blank row - skip if sound off and not multiplayer
+    const blankRowDelay = (soundEnabled.value || isMultiplayer.value) ? 500 : 0
+    await sleep(blankRowDelay)
     
     // Reveal letters one by one with letter and green animation simultaneously
     for (let i = 0; i < wordLength.value; i++) {
@@ -831,6 +844,7 @@ export const useGameStore = defineStore('game', () => {
   }
   
   function playLetterSound(letterState) {
+    if (!soundEnabled.value) return
     try {
       let audio = null
       
@@ -911,6 +925,7 @@ export const useGameStore = defineStore('game', () => {
   }
   
   function playVictoryTune() {
+    if (!soundEnabled.value) return
     try {
       // Try to play audio file first (mp3 or wav)
       const audio = new Audio('/sounds/victory.mp3')
@@ -1019,6 +1034,7 @@ export const useGameStore = defineStore('game', () => {
   }
   
   function playTurnSwitchSound() {
+    if (!soundEnabled.value) return
     try {
       const ctx = getAudioContext()
       const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12)
@@ -1057,6 +1073,7 @@ export const useGameStore = defineStore('game', () => {
   }
   
   function playTimeoutBuzzer() {
+    if (!soundEnabled.value) return
     try {
       const audio = new Audio('/sounds/buzzer.mp3')
       audio.volume = 0.5
@@ -1074,6 +1091,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function playIntroTune() {
+    if (!soundEnabled.value) return
     try {
       // Try to play audio file first (mp3 or wav)
       const audio = new Audio('/sounds/intro.mp3')
@@ -1136,6 +1154,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function playTurnOverSound() {
+    if (!soundEnabled.value) return
     try {
       // Try to play audio file first (mp3 or wav)
       const audio = new Audio('/sounds/turnOver.mp3')
@@ -1154,6 +1173,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function playBonusLetterSound() {
+    if (!soundEnabled.value) return
     try {
       const audio = new Audio('/sounds/bonusLetter.mp3')
       audio.volume = 0.6
@@ -1171,6 +1191,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function playRevealAnswerSound() {
+    if (!soundEnabled.value) return
     try {
       const audio = new Audio('/sounds/revealAnswer.mp3')
       audio.volume = 0.6
@@ -1326,6 +1347,16 @@ export const useGameStore = defineStore('game', () => {
     socket.value = null
   }
 
+  function toggleSound() {
+    soundEnabled.value = !soundEnabled.value
+    // Save to localStorage
+    try {
+      localStorage.setItem('lingoSoundEnabled', JSON.stringify(soundEnabled.value))
+    } catch (e) {
+      console.error('Failed to save sound preference:', e)
+    }
+  }
+
   return {
     // State
     player1,
@@ -1349,6 +1380,7 @@ export const useGameStore = defineStore('game', () => {
     waitingForPlayer,
     isHost,
     isVictoryMode,
+    soundEnabled,
     
     // Computed
     currentGuess,
@@ -1374,6 +1406,7 @@ export const useGameStore = defineStore('game', () => {
     resetMultiplayer,
     stopTimer,
     startTimer,
-    retryInvalidWord
+    retryInvalidWord,
+    toggleSound
   }
 })

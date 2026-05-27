@@ -3,6 +3,11 @@
     <div class="dialog-content">
       <h1 class="dialog-title">LINGO</h1>
       
+      <!-- Speaker icon for sound toggle -->
+      <div class="speaker-icon-container">
+        <SpeakerIcon />
+      </div>
+      
       <div class="form-group">
         <label>Speler 1:</label>
         <input 
@@ -92,6 +97,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import SpeakerIcon from './SpeakerIcon.vue'
 
 const emit = defineEmits(['close', 'start', 'createRoom', 'joinRoom'])
 
@@ -289,6 +295,20 @@ onUnmounted(() => {
   caret-color: transparent;
   letter-spacing: 0.1em;
   line-height: 1.2;
+}
+
+.speaker-icon-container {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  z-index: 1100;
+}
+
+@media (max-width: 768px) {
+  .speaker-icon-container {
+    top: 1rem;
+    right: 1rem;
+  }
 }
 
 .form-group {
