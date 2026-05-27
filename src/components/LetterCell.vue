@@ -52,7 +52,7 @@ const stateClass = computed(() => {
   cursor: default;
   outline: none;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   caret-color: transparent;
   flex-shrink: 0;
 }

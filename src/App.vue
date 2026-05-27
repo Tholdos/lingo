@@ -45,13 +45,21 @@
         <p v-else-if="duplicateWord">Het woord "{{ displayInvalidWord }}" is al eerder geraden in deze ronde.</p>
         <p v-else>Het woord "{{ displayInvalidWord }}" is niet in de woordenlijst.</p>
         
-        <div class="button-group" v-if="!duplicateWord && !wrongFirstLetter">
-          <button @click="acceptInvalidWord" @touchend.prevent="acceptInvalidWord" class="btn btn-primary" title="Druk op Enter">Accepteren</button>
-          <button @click="rejectInvalidWord" @touchend.prevent="rejectInvalidWord" class="btn btn-secondary" title="Druk op Escape">Weigeren</button>
-        </div>
-        <div class="button-group" v-else>
-          <button @click="rejectInvalidWord" @touchend.prevent="rejectInvalidWord" class="btn btn-primary" title="Druk op Enter">OK</button>
-        </div>
+        <!-- Show buttons only if not multiplayer or if host -->
+        <template v-if="!gameStore.isMultiplayer || gameStore.isHost">
+          <div class="button-group" v-if="!duplicateWord && !wrongFirstLetter">
+            <button @click="acceptInvalidWord" @touchend.prevent="acceptInvalidWord" class="btn btn-primary" title="Druk op Enter">Accepteren</button>
+            <button @click="rejectInvalidWord" @touchend.prevent="rejectInvalidWord" class="btn btn-secondary" title="Druk op Escape">Weigeren</button>
+          </div>
+          <div class="button-group" v-else>
+            <button @click="rejectInvalidWord" @touchend.prevent="rejectInvalidWord" class="btn btn-primary" title="Druk op Enter">OK</button>
+          </div>
+        </template>
+        
+        <!-- Show waiting message for non-host in multiplayer -->
+        <p v-else class="waiting-message">
+          Wacht op {{ gameStore.player1.name }}...
+        </p>
       </div>
     </div>
   </div>
@@ -344,6 +352,13 @@ body {
   margin-bottom: 2rem;
   user-select: none;
   caret-color: transparent;
+}
+
+.invalid-word-dialog .waiting-message {
+  color: #f3f4f6;
+  font-size: 1.2rem;
+  margin: 0;
+  font-style: italic;
 }
 
 .button-group {
