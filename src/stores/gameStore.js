@@ -618,6 +618,12 @@ export const useGameStore = defineStore('game', () => {
     isTimerActive.value = true
     timeRemaining.value = getTimerDuration(wordLength.value)
     
+    // Only the host should run the timer interval in multiplayer mode
+    // Non-host players receive timer updates via state sync
+    if (isMultiplayer.value && !isHost.value) {
+      return
+    }
+    
     timerInterval = setInterval(async () => {
       if (timeRemaining.value > 0) {
         timeRemaining.value--
