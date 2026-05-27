@@ -76,7 +76,13 @@ io.on('connection', (socket) => {
 })
 
 function generateRoomId() {
-  return Math.random().toString(36).substring(2, 8).toUpperCase()
+  // Generate 6-letter code (A-Z only, no numbers)
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  let code = ''
+  for (let i = 0; i < 6; i++) {
+    code += letters.charAt(Math.floor(Math.random() * letters.length))
+  }
+  return code
 }
 
 const PORT = process.env.PORT || 3000

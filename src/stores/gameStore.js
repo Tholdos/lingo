@@ -1281,16 +1281,56 @@ export const useGameStore = defineStore('game', () => {
     })
   }
 
-  function createRoom() {
+  async function createRoom() {
     isMultiplayer.value = true
     isHost.value = true
-    socket.value?.emit('createRoom')
+    
+    // Wait for socket connection if not connected yet
+    if (!socket.value || !isConnected.value) {
+      console.log('Waiting for socket connection...')
+      // Wait up to 5 seconds for connection
+      for (let i = 0; i < 50; i++) {
+        await sleep(100)
+        if (socket.value && isConnected.value) {
+          break
+        }
+      }
+    }
+    
+    if (!socket.value || !isConnected.value) {
+      console.error('Socket not connected')
+      alert('Kan geen verbinding maken met de server. Controleer je internetverbinding en probeer het opnieuw.')
+      resetMultiplayer()
+      return
+    }
+    
+    socket.value.emit('createRoom')
   }
 
-  function joinRoom(id) {
+  async function joinRoom(id) {
     isMultiplayer.value = true
     isHost.value = false
-    socket.value?.emit('joinRoom', id)
+    
+    // Wait for socket connection if not connected yet
+    if (!socket.value || !isConnected.value) {
+      console.log('Waiting for socket connection...')
+      // Wait up to 5 seconds for connection
+      for (let i = 0; i < 50; i++) {
+        await sleep(100)
+        if (socket.value && isConnected.value) {
+          break
+        }
+      }
+    }
+    
+    if (!socket.value || !isConnected.value) {
+      console.error('Socket not connected')
+      alert('Kan geen verbinding maken met de server. Controleer je internetverbinding en probeer het opnieuw.')
+      resetMultiplayer()
+      return
+    }
+    
+    socket.value.emit('joinRoom', id)
   }
 
   function emitGameState() {

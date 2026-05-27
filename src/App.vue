@@ -180,13 +180,13 @@ function handleStart(settings: { player1Name: string, player2Name: string, wordL
   gameStore.startGame(settings)
 }
 
-function handleCreateRoom(settings: { player1Name: string, player2Name: string, wordLength: number, showHintLetters: boolean, playIntroTune?: boolean }) {
+async function handleCreateRoom(settings: { player1Name: string, player2Name: string, wordLength: number, showHintLetters: boolean, playIntroTune?: boolean }) {
   pendingGameSettings.value = settings
-  gameStore.createRoom()
+  await gameStore.createRoom()
 }
 
-function handleJoinRoom(code: string) {
-  gameStore.joinRoom(code)
+async function handleJoinRoom(code: string) {
+  await gameStore.joinRoom(code)
 }
 
 function handleCancelRoom() {
