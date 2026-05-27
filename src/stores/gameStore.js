@@ -46,6 +46,7 @@ export const useGameStore = defineStore('game', () => {
   const roundStartPlayer = ref(1)
   const isVictoryMode = ref(false)
   const isAnimatingReveal = ref(false)
+  const invalidWordData = ref(null)  // { word: string, type: 'invalid' | 'duplicate' | 'wrongFirstLetter' }
   
   // Multiplayer
   const socket = ref(null)
@@ -333,21 +334,36 @@ export const useGameStore = defineStore('game', () => {
     
     // Check if word starts with the correct first letter (which is always revealed)
     if (!bypassDictionaryCheck && guess[0] !== targetWord.value[0]) {
+      invalidWordData.value = { word: guess, type: 'wrongFirstLetter' }
+      if (isMultiplayer.value) {
+        emitGameState()
+      }
       isProcessingGuess.value = false
       return 'wrongFirstLetter'
     }
     
     // Check if word has already been guessed in this round (unless bypassing)
     if (!bypassDictionaryCheck && guessedWords.value.has(guess)) {
+      invalidWordData.value = { word: guess, type: 'duplicate' }
+      if (isMultiplayer.value) {
+        emitGameState()
+      }
       isProcessingGuess.value = false
       return 'duplicate'
     }
     
     // Check if word exists in dictionary (unless bypassed)
     if (!bypassDictionaryCheck && !checkWordList.value.includes(guess)) {
+      invalidWordData.value = { word: guess, type: 'invalid' }
+      if (isMultiplayer.value) {
+        emitGameState()
+      }
       isProcessingGuess.value = false
       return 'invalid'
     }
+    
+    // Clear invalid word data since word is valid (or bypassed)
+    invalidWordData.value = null
     
     // Add to guessed words only after validation passes or is bypassed
     guessedWords.value.add(guess)
@@ -679,6 +695,9 @@ export const useGameStore = defineStore('game', () => {
 
   function retryInvalidWord() {
     stopTimer()
+    
+    // Clear invalid word data
+    invalidWordData.value = null
     
     // If we're in extra turn mode and both players have used their extra turns, reveal word
     if (validGuessCount.value >= 5) {
@@ -1308,6 +1327,7 @@ export const useGameStore = defineStore('game', () => {
       roundStartPlayer: roundStartPlayer.value,
       isVictoryMode: isVictoryMode.value,
       isAnimatingReveal: isAnimatingReveal.value,
+      invalidWordData: invalidWordData.value,
       guessedWords: Array.from(guessedWords.value)
     }
     
@@ -1343,6 +1363,7 @@ export const useGameStore = defineStore('game', () => {
     if (state.roundStartPlayer !== undefined) roundStartPlayer.value = state.roundStartPlayer
     if (state.isVictoryMode !== undefined) isVictoryMode.value = state.isVictoryMode
     if (state.isAnimatingReveal !== undefined) isAnimatingReveal.value = state.isAnimatingReveal
+    if (state.invalidWordData !== undefined) invalidWordData.value = state.invalidWordData
     if (state.guessedWords) guessedWords.value = new Set(state.guessedWords)
   }
 
@@ -1396,6 +1417,7 @@ export const useGameStore = defineStore('game', () => {
     isHost,
     isVictoryMode,
     isAnimatingReveal,
+    invalidWordData,
     soundEnabled,
     
     // Computed

@@ -126,6 +126,27 @@ watch(() => gameStore.waitingForPlayer, (newValue, oldValue) => {
   }
 })
 
+// Watch for invalid word in multiplayer to show dialog on both clients
+watch(() => gameStore.invalidWordData, (newValue) => {
+  if (newValue && gameStore.isMultiplayer) {
+    currentInvalidWord.value = newValue.word
+    if (newValue.type === 'duplicate') {
+      duplicateWord.value = true
+      wrongFirstLetter.value = false
+    } else if (newValue.type === 'wrongFirstLetter') {
+      duplicateWord.value = false
+      wrongFirstLetter.value = true
+    } else {
+      duplicateWord.value = false
+      wrongFirstLetter.value = false
+    }
+    invalidWordDialog.value = true
+  } else if (!newValue && invalidWordDialog.value) {
+    // Clear dialog when host clears the invalid word data
+    invalidWordDialog.value = false
+  }
+})
+
 onMounted(async () => {
   // Load word lists
   try {
@@ -272,17 +293,21 @@ async function handleKeyPress(event) {
 }
 
 async function acceptInvalidWord() {
+  // Clear invalid word data
+  gameStore.invalidWordData = null
   // Process the word as if it were valid
   invalidWordDialog.value = false
   // Wait a tick to ensure dialog is closed before processing
   await new Promise(resolve => setTimeout(resolve, 10))
-  await gameStore.submitGuess(true) // bypass dictionary check
+  await gameStore.submitGuess(true) // bypass dictionary check (this will emit state)
 }
 
 function rejectInvalidWord() {
-  // First clear the state
+  // Clear invalid word data
+  gameStore.invalidWordData = null
+  // Clear the state (this will emit state for multiplayer)
   gameStore.retryInvalidWord()
-  // Then close the dialog
+  // Close the dialog
   invalidWordDialog.value = false
 }
 </script>
