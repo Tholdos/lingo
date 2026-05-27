@@ -235,6 +235,12 @@ async function handleKeyPress(event) {
       return
     }
     
+    // In multiplayer, only host can accept/reject invalid words
+    if (gameStore.isMultiplayer && !gameStore.isHost) {
+      event.preventDefault()
+      return
+    }
+    
     if (event.key === 'Enter') {
       event.preventDefault()
       if (duplicateWord.value || wrongFirstLetter.value) {
