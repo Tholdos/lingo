@@ -2,10 +2,17 @@
   <div class="overlay" v-if="show">
     <div class="overlay-content">
       <h2>{{ message }}</h2>
-      <div class="button-group">
+      
+      <!-- Show buttons only if not multiplayer or if host -->
+      <div v-if="!isMultiplayer || isHost" class="button-group">
         <button @click="handleNewWord" @touchend.prevent="handleNewWord" class="btn btn-primary" title="Druk op Enter">Nieuw woord</button>
         <button @click="handleNewGame" @touchend.prevent="handleNewGame" class="btn btn-secondary">Nieuw spel</button>
       </div>
+      
+      <!-- Show waiting message for non-host in multiplayer -->
+      <p v-else class="waiting-message">
+        Wacht op {{ hostName }}...
+      </p>
     </div>
   </div>
 </template>
@@ -15,7 +22,10 @@ import { onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({
   show: Boolean,
-  message: String
+  message: String,
+  isMultiplayer: Boolean,
+  isHost: Boolean,
+  hostName: String
 })
 
 const emit = defineEmits(['close', 'newWord', 'newGame'])
@@ -93,6 +103,13 @@ onUnmounted(() => {
     font-size: 1.5rem;
     margin: 0 0 1.5rem 0;
   }
+}
+
+.waiting-message {
+  color: #f3f4f6;
+  font-size: 1.2rem;
+  margin: 0;
+  font-style: italic;
 }
 
 .button-group {

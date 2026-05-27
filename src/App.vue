@@ -27,6 +27,9 @@
     <OverlayDialog
       :show="gameStore.showOverlay"
       :message="gameStore.overlayMessage"
+      :is-multiplayer="gameStore.isMultiplayer"
+      :is-host="gameStore.isHost"
+      :host-name="gameStore.player1.name"
       @close="gameStore.closeOverlay()"
       @new-word="handleNewWord"
       @new-game="handleNewGame"

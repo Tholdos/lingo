@@ -87,6 +87,7 @@
           autocorrect="off"
           autocapitalize="characters"
           spellcheck="false"
+          @input="handleJoinCodeInput"
         />
         <button @click="handleJoinRoom" class="btn btn-primary">Deelnemen</button>
         <button @click="handleCancelJoin" class="btn btn-secondary">Annuleren</button>
@@ -243,6 +244,12 @@ function handleJoinRoom() {
 
 function handleCancelJoin() {
   showJoinDialog.value = false
+  joinCode.value = ''
+}
+
+function handleJoinCodeInput(event) {
+  // Force uppercase for room code
+  joinCode.value = event.target.value.toUpperCase()
 }
 
 onUnmounted(() => {
@@ -439,5 +446,7 @@ onUnmounted(() => {
   border: 2px solid #4a5568;
   background: #2d3748;
   color: #f3f4f6;
+  caret-color: #fbbf24;
+  text-transform: uppercase;
 }
 </style>
