@@ -54,31 +54,45 @@ function toggleSound() {
 
 <style scoped>
 .speaker-button {
-  background: transparent;
-  border: 2px solid #333;
-  border-radius: 8px;
-  padding: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #16a34a;
+  border-radius: 10px;
+  padding: 10px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  color: #333;
+  color: #16a34a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .speaker-button:hover {
-  background: #f0f0f0;
-  border-color: #16a34a;
-  color: #16a34a;
+  background: #fff;
+  border-color: #15803d;
+  color: #15803d;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transform: scale(1.05);
 }
 
 .speaker-button:active {
-  transform: scale(0.95);
+  transform: scale(0.98);
 }
 
 .speaker-button svg {
   display: block;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
+}
+
+@media (max-width: 768px) {
+  .speaker-button {
+    padding: 8px;
+  }
+  
+  .speaker-button svg {
+    width: 24px;
+    height: 24px;
+  }
 }
 </style>
