@@ -158,7 +158,8 @@ const stateClass = computed(() => {
   pointer-events: none;
   caret-color: transparent;
   line-height: 1;
-  display: block;
+  margin: 0;
+  padding: 0;
 }
 
 /* Font size adjustments for longer words */
@@ -181,6 +182,9 @@ const stateClass = computed(() => {
 @media (max-width: 768px) {
   .letter-text {
     font-size: 20px;
+    /* Nudge down slightly for mobile font rendering */
+    position: relative;
+    top: 1px;
   }
   
   .word-length-7 .letter-text {

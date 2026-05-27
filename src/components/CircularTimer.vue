@@ -96,9 +96,8 @@ const dashOffset = computed(() => {
   user-select: none;
   caret-color: transparent;
   line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin: 0;
+  padding: 0;
 }
 
 @media (max-width: 768px) {
@@ -109,6 +108,8 @@ const dashOffset = computed(() => {
   
   .timer-text {
     font-size: 1.4rem;
+    /* Nudge down slightly for mobile font rendering */
+    transform: translate(-50%, calc(-50% + 1px));
   }
 }
 
@@ -120,6 +121,8 @@ const dashOffset = computed(() => {
   
   .timer-text {
     font-size: 1.1rem;
+    /* Nudge down slightly for mobile font rendering */
+    transform: translate(-50%, calc(-50% + 1px));
   }
 }
 
