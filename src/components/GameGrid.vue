@@ -48,21 +48,19 @@
     </div>
     
     <!-- Game grid with dynamic sizing based on word length -->
-    <div v-if="gameStore.showGrid" class="game-grid" ref="gameGridRef" :class="'word-length-' + gameStore.wordLength">
-      <TransitionGroup name="row-shift" tag="div" class="grid-rows">
-        <div v-for="(row, rowIndex) in visibleCells" :key="`row-${rowIndex}-${row[0]?.letter || ''}`" class="row">
-          <LetterCell 
-            v-for="(cell, colIndex) in row" 
-            :key="colIndex"
-            :letter="cell.letter"
-            :state="cell.state"
-            :is-active="rowIndex === gameStore.currentRow && colIndex === gameStore.currentColumn"
-            :is-victory-mode="gameStore.isVictoryMode"
-            :row-index="rowIndex"
-            :winning-row="gameStore.currentRow"
-          />
-        </div>
-      </TransitionGroup>
+    <div v-if="gameStore.showGrid" class="game-grid" ref="gameGridRef" :class="['word-length-' + gameStore.wordLength, { 'reveal-animation': gameStore.isAnimatingReveal }]">
+      <div v-for="(row, rowIndex) in visibleCells" :key="rowIndex" class="row">
+        <LetterCell 
+          v-for="(cell, colIndex) in row" 
+          :key="colIndex"
+          :letter="cell.letter"
+          :state="cell.state"
+          :is-active="rowIndex === gameStore.currentRow && colIndex === gameStore.currentColumn"
+          :is-victory-mode="gameStore.isVictoryMode"
+          :row-index="rowIndex"
+          :winning-row="gameStore.currentRow"
+        />
+      </div>
     </div>
     <!-- END OF CHANGED SECTION -->
 
@@ -317,13 +315,6 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 0.4rem;
   max-width: 100%;
-  transition: all 0.3s ease;
-}
-
-.grid-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
 }
 
 /* Adjust gap for longer words */
@@ -336,31 +327,21 @@ onUnmounted(() => {
   display: flex;
   gap: 0.4rem;
   justify-content: center;
-  transition: all 0.75s ease;
 }
 
-/* Row shift animation */
-.row-shift-move {
-  transition: all 0.75s ease;
+/* Reveal answer animation - only when .reveal-animation class is present */
+.game-grid.reveal-animation .row {
+  animation: rowShiftUp 0.75s ease;
 }
 
-.row-shift-enter-active {
-  transition: all 0.75s ease;
-}
-
-.row-shift-leave-active {
-  transition: all 0.75s ease;
-  position: absolute;
-}
-
-.row-shift-enter-from {
-  opacity: 0;
-  transform: translateY(60px);
-}
-
-.row-shift-leave-to {
-  opacity: 0;
-  transform: translateY(-60px);
+@keyframes rowShiftUp {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-60px);
+    opacity: 0.5;
+  }
 }
 
 @media (max-width: 768px) {

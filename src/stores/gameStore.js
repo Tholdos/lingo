@@ -45,6 +45,7 @@ export const useGameStore = defineStore('game', () => {
   const validGuessCount = ref(0)  // Tracks the number of valid wrong guesses
   const roundStartPlayer = ref(1)
   const isVictoryMode = ref(false)
+  const isAnimatingReveal = ref(false)
   
   // Multiplayer
   const socket = ref(null)
@@ -771,6 +772,9 @@ export const useGameStore = defineStore('game', () => {
   async function revealWord() {
     stopTimer()
     
+    // Set animation flag
+    isAnimatingReveal.value = true
+    
     // Play reveal answer sound (duration ~750ms) and shift rows simultaneously
     playRevealAnswerSound()
     
@@ -800,6 +804,9 @@ export const useGameStore = defineStore('game', () => {
     // Wait for animation to complete (750ms) - skip if sound off and not multiplayer
     const animationTime = (soundEnabled.value || isMultiplayer.value) ? 750 : 0
     await sleep(animationTime)
+    
+    // Clear animation flag
+    isAnimatingReveal.value = false
     
     // Small delay to show blank row - skip if sound off and not multiplayer
     const blankRowDelay = (soundEnabled.value || isMultiplayer.value) ? 250 : 0
@@ -1300,6 +1307,7 @@ export const useGameStore = defineStore('game', () => {
       validGuessCount: validGuessCount.value,
       roundStartPlayer: roundStartPlayer.value,
       isVictoryMode: isVictoryMode.value,
+      isAnimatingReveal: isAnimatingReveal.value,
       guessedWords: Array.from(guessedWords.value)
     }
     
@@ -1334,6 +1342,7 @@ export const useGameStore = defineStore('game', () => {
     if (state.validGuessCount !== undefined) validGuessCount.value = state.validGuessCount
     if (state.roundStartPlayer !== undefined) roundStartPlayer.value = state.roundStartPlayer
     if (state.isVictoryMode !== undefined) isVictoryMode.value = state.isVictoryMode
+    if (state.isAnimatingReveal !== undefined) isAnimatingReveal.value = state.isAnimatingReveal
     if (state.guessedWords) guessedWords.value = new Set(state.guessedWords)
   }
 
@@ -1386,6 +1395,7 @@ export const useGameStore = defineStore('game', () => {
     waitingForPlayer,
     isHost,
     isVictoryMode,
+    isAnimatingReveal,
     soundEnabled,
     
     // Computed
