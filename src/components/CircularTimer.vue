@@ -95,6 +95,10 @@ const dashOffset = computed(() => {
   pointer-events: none;
   user-select: none;
   caret-color: transparent;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {

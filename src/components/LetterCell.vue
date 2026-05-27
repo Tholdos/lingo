@@ -157,6 +157,8 @@ const stateClass = computed(() => {
   text-transform: uppercase;
   pointer-events: none;
   caret-color: transparent;
+  line-height: 1;
+  display: block;
 }
 
 /* Font size adjustments for longer words */
