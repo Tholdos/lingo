@@ -45,8 +45,8 @@
         <p v-else-if="duplicateWord">Het woord "{{ displayInvalidWord }}" is al eerder geraden in deze ronde.</p>
         <p v-else>Het woord "{{ displayInvalidWord }}" is niet in de woordenlijst.</p>
         
-        <!-- Show buttons only if not multiplayer or if it's my turn -->
-        <template v-if="!gameStore.isMultiplayer || gameStore.isMyTurn()">
+        <!-- Show buttons only if not multiplayer or if host -->
+        <template v-if="!gameStore.isMultiplayer || gameStore.isHost">
           <div class="button-group" v-if="!duplicateWord && !wrongFirstLetter">
             <button @click="acceptInvalidWord" @touchend.prevent="acceptInvalidWord" class="btn btn-primary" title="Druk op Enter">Accepteren</button>
             <button @click="rejectInvalidWord" @touchend.prevent="rejectInvalidWord" class="btn btn-secondary" title="Druk op Escape">Weigeren</button>
@@ -56,9 +56,9 @@
           </div>
         </template>
         
-        <!-- Show waiting message for other player in multiplayer -->
+        <!-- Show waiting message for non-host in multiplayer -->
         <p v-else class="waiting-message">
-          Wacht op {{ gameStore.activePlayerName }}...
+          Wacht op {{ gameStore.player1.name }}...
         </p>
       </div>
     </div>
@@ -228,17 +228,26 @@ async function handleKeyPress(event) {
       currentInvalidWord.value = gameStore.currentGuess
       duplicateWord.value = false
       wrongFirstLetter.value = false
-      invalidWordDialog.value = true
+      // In multiplayer, only show dialog to host
+      if (!gameStore.isMultiplayer || gameStore.isHost) {
+        invalidWordDialog.value = true
+      }
     } else if (result === 'duplicate') {
       currentInvalidWord.value = gameStore.currentGuess
       duplicateWord.value = true
       wrongFirstLetter.value = false
-      invalidWordDialog.value = true
+      // In multiplayer, only show dialog to host
+      if (!gameStore.isMultiplayer || gameStore.isHost) {
+        invalidWordDialog.value = true
+      }
     } else if (result === 'wrongFirstLetter') {
       currentInvalidWord.value = gameStore.currentGuess
       duplicateWord.value = false
       wrongFirstLetter.value = true
-      invalidWordDialog.value = true
+      // In multiplayer, only show dialog to host
+      if (!gameStore.isMultiplayer || gameStore.isHost) {
+        invalidWordDialog.value = true
+      }
     }
   } else if (event.key === 'Backspace') {
     event.preventDefault()
