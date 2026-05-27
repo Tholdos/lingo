@@ -771,14 +771,10 @@ export const useGameStore = defineStore('game', () => {
   async function revealWord() {
     stopTimer()
     
-    // Play reveal answer sound (duration ~750ms) and sync row shift animation with it
+    // Play reveal answer sound (duration ~750ms) and shift rows simultaneously
     playRevealAnswerSound()
     
-    // Wait 750ms for the sound duration - skip delay if sound off and not multiplayer
-    const delayTime = (soundEnabled.value || isMultiplayer.value) ? 750 : 0
-    await sleep(delayTime)
-    
-    // Shift all rows up once more and use last row for reveal
+    // Shift all rows up immediately (animation runs for 750ms to sync with sound)
     for (let r = 0; r < 6; r++) {
       for (let c = 0; c < wordLength.value; c++) {
         cells.value[r][c] = { ...cells.value[r + 1][c] }
@@ -800,6 +796,10 @@ export const useGameStore = defineStore('game', () => {
     if (isMultiplayer.value) {
       emitGameState()
     }
+    
+    // Wait for animation to complete (750ms) - skip if sound off and not multiplayer
+    const animationTime = (soundEnabled.value || isMultiplayer.value) ? 750 : 0
+    await sleep(animationTime)
     
     // Small delay to show blank row - skip if sound off and not multiplayer
     const blankRowDelay = (soundEnabled.value || isMultiplayer.value) ? 250 : 0
