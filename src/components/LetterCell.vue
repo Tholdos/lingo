@@ -160,11 +160,9 @@ const stateClass = computed(() => {
   line-height: 1;
   margin: 0;
   padding: 0;
-  vertical-align: baseline;
-  display: inline-block;
+  /* Remove vertical-align and display properties to let flex handle centering */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transform: translateZ(0);
 }
 
 /* Font size adjustments for longer words */
