@@ -185,8 +185,8 @@ async function handleCreateRoom(settings: { player1Name: string, player2Name: st
   await gameStore.createRoom()
 }
 
-async function handleJoinRoom(code: string) {
-  await gameStore.joinRoom(code)
+async function handleJoinRoom(code: string, playerName: string) {
+  await gameStore.joinRoom(code, playerName)
 }
 
 function handleCancelRoom() {

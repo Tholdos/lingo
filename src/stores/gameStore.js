@@ -50,6 +50,7 @@ export const useGameStore = defineStore('game', () => {
   // Multiplayer
   const socket = ref(null)
   const roomId = ref(null)
+  const joinerName = ref(null) // Store joiner's name when they join
 
   // Load sound preference from localStorage
   try {
@@ -177,7 +178,12 @@ export const useGameStore = defineStore('game', () => {
 
   function startGame(settings) {
     player1.value.name = settings.player1Name
-    player2.value.name = settings.player2Name
+    // If we're multiplayer and have joiner's name (either as host or joiner), use it
+    if (isMultiplayer.value && joinerName.value) {
+      player2.value.name = joinerName.value
+    } else {
+      player2.value.name = settings.player2Name
+    }
     player1.value.score = 0
     player2.value.score = 0
     wordLength.value = settings.wordLength
@@ -201,8 +207,13 @@ export const useGameStore = defineStore('game', () => {
     gameStarted.value = true
     showGrid.value = false
     
-    // Play intro tune if enabled, then start game after 19 seconds
-    if (settings.playIntroTune) {
+    // Play intro tune only if:
+    // 1. Not in multiplayer mode
+    // 2. Sound is enabled
+    // 3. User has enabled playIntroTune
+    const shouldPlayIntro = !isMultiplayer.value && soundEnabled.value && settings.playIntroTune
+    
+    if (shouldPlayIntro) {
       playIntroTune()
       // Wait 19 seconds before showing grid and starting word
       setTimeout(() => {
@@ -1258,9 +1269,13 @@ export const useGameStore = defineStore('game', () => {
       console.log('Room joined:', id)
     })
     
-    socket.value.on('playerJoined', () => {
+    socket.value.on('playerJoined', (data) => {
       waitingForPlayer.value = false
-      console.log('Player joined the room')
+      // Store the joiner's name if provided
+      if (data && data.playerName) {
+        joinerName.value = data.playerName
+      }
+      console.log('Player joined the room with name:', data?.playerName)
     })
 
     socket.value.on('gameState', (state) => {
@@ -1272,7 +1287,7 @@ export const useGameStore = defineStore('game', () => {
     })
     
     socket.value.on('playerLeft', () => {
-      alert('Other player disconnected')
+      alert('Andere speler heeft de verbinding verbroken')
       resetMultiplayer()
     })
 
@@ -1307,9 +1322,14 @@ export const useGameStore = defineStore('game', () => {
     socket.value.emit('createRoom')
   }
 
-  async function joinRoom(id) {
+  async function joinRoom(id, playerName = null) {
     isMultiplayer.value = true
     isHost.value = false
+    
+    // Store joiner's name if provided
+    if (playerName) {
+      joinerName.value = playerName
+    }
     
     // Wait for socket connection if not connected yet
     if (!socket.value || !isConnected.value) {
@@ -1330,7 +1350,7 @@ export const useGameStore = defineStore('game', () => {
       return
     }
     
-    socket.value.emit('joinRoom', id)
+    socket.value.emit('joinRoom', { roomId: id, playerName: playerName || 'Speler 2' })
   }
 
   function emitGameState() {
@@ -1409,6 +1429,7 @@ export const useGameStore = defineStore('game', () => {
     isHost.value = false
     roomId.value = null
     waitingForPlayer.value = false
+    joinerName.value = null
     socket.value?.disconnect()
     socket.value = null
   }

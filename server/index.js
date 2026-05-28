@@ -43,14 +43,19 @@ io.on('connection', (socket) => {
     console.log('Room created:', roomId)
   })
 
-  socket.on('joinRoom', (roomId) => {
+  socket.on('joinRoom', (data) => {
+    // Handle both old format (string) and new format (object)
+    const roomId = typeof data === 'string' ? data : data.roomId
+    const playerName = typeof data === 'string' ? null : data.playerName
+    
     const room = rooms.get(roomId)
     if (room && !room.guest) {
       room.guest = socket.id
       socket.join(roomId)
       socket.emit('roomJoined', roomId)
-      io.to(roomId).emit('playerJoined')
-      console.log('Player joined room:', roomId)
+      // Send player name to host
+      io.to(room.host).emit('playerJoined', { playerName })
+      console.log('Player joined room:', roomId, 'with name:', playerName)
     } else {
       socket.emit('joinError', 'Kamer niet gevonden of vol')
     }

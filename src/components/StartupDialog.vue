@@ -9,11 +9,11 @@
       </div>
       
       <div class="form-group">
-        <label>Speler 1:</label>
+        <label>{{ playerNameLabel }}</label>
         <input 
           v-model="player1Name" 
           type="text" 
-          placeholder="Speler 1" 
+          :placeholder="multiplayerMode ? 'Jouw naam' : 'Speler 1'" 
           ref="player1Input" 
           @focus="selectAll"
           inputmode="text"
@@ -24,7 +24,7 @@
         />
       </div>
 
-      <div class="form-group">
+      <div v-if="!multiplayerMode" class="form-group">
         <label>Speler 2:</label>
         <input 
           v-model="player2Name" 
@@ -40,7 +40,7 @@
         />
       </div>
 
-      <div class="form-group">
+      <div v-if="multiplayerMode !== 'join'" class="form-group">
         <label>Woordlengte:</label>
         <select v-model.number="wordLength" class="word-length-select">
           <option :value="5">5 letters</option>
@@ -52,27 +52,32 @@
         </select>
       </div>
 
-      <div class="form-group">
+      <div v-if="multiplayerMode !== 'join'" class="form-group">
         <label>Timer (seconden):</label>
         <input v-model.number="displayedTimerDuration" type="number" min="6" max="61" class="timer-input" />
       </div>
 
-      <div class="form-group">
+      <div v-if="multiplayerMode !== 'join'" class="form-group">
         <label><input type="checkbox" v-model="showHintLetters" /> Bonusletter weergeven bij beurtverlies</label>
       </div>
 
-      <div class="form-group">
+      <div v-if="!multiplayerMode" class="form-group">
         <label><input type="checkbox" v-model="playIntroTune" /> Intro afspelen</label>
       </div>
 
-      <div class="button-group">
+      <div v-if="!multiplayerMode" class="button-group">
         <button @click="handleStartGame" class="btn btn-primary" title="Druk op Enter">Start spel</button>
       </div>
 
-      <div class="multiplayer-section">
+      <div v-if="multiplayerMode === 'create'" class="button-group">
+        <button @click="handleCreateRoom" class="btn btn-primary">Kamer maken</button>
+        <button @click="handleCancelMultiplayer" class="btn btn-secondary">Terug</button>
+      </div>
+
+      <div v-if="!multiplayerMode" class="multiplayer-section">
         <h3>Multiplayer</h3>
         <div class="button-group">
-          <button @click="handleCreateRoom" class="btn btn-secondary">Maak kamer</button>
+          <button @click="handleShowCreateDialog" class="btn btn-secondary">Maak kamer</button>
           <button @click="handleShowJoinDialog" class="btn btn-secondary">Doe mee</button>
         </div>
       </div>
@@ -89,8 +94,10 @@
           spellcheck="false"
           @input="handleJoinCodeInput"
         />
-        <button @click="handleJoinRoom" class="btn btn-primary">Deelnemen</button>
-        <button @click="handleCancelJoin" class="btn btn-secondary">Annuleren</button>
+        <div class="button-group">
+          <button @click="handleJoinRoom" class="btn btn-primary">Deelnemen</button>
+          <button @click="handleCancelJoin" class="btn btn-secondary">Terug</button>
+        </div>
       </div>
     </div>
   </div>
@@ -102,6 +109,7 @@ import SpeakerIcon from './SpeakerIcon.vue'
 
 const emit = defineEmits(['close', 'start', 'createRoom', 'joinRoom'])
 
+const multiplayerMode = ref(null) // null = single player, 'create' = host, 'join' = joiner
 const player1Name = ref('Speler 1')
 const player2Name = ref('Speler 2')
 const wordLength = ref(6)
@@ -112,6 +120,14 @@ const showJoinDialog = ref(false)
 const joinCode = ref('')
 const player1Input = ref(null)
 const player2Input = ref(null)
+
+// Computed property for player name label
+const playerNameLabel = computed(() => {
+  if (multiplayerMode.value === 'create' || multiplayerMode.value === 'join') {
+    return 'Jouw naam:'
+  }
+  return 'Speler 1:'
+})
 
 // Computed property to display timer + 1 to user (more intuitive)
 const displayedTimerDuration = computed({
@@ -167,7 +183,9 @@ function handleKeyDown(event) {
     // If join dialog is active, press the "Deelnemen" button instead
     if (showJoinDialog.value) {
       handleJoinRoom()
-    } else {
+    } else if (multiplayerMode.value === 'create') {
+      handleCreateRoom()
+    } else if (!multiplayerMode.value) {
       handleStartGame()
     }
   }
@@ -208,7 +226,7 @@ function handleStartGame() {
 function handleCreateRoom() {
   const settings = {
     player1Name: player1Name.value || 'Speler 1',
-    player2Name: player2Name.value || 'Speler 2',
+    player2Name: 'Speler 2', // Default name for player 2
     wordLength: wordLength.value,
     showHintLetters: showHintLetters.value,
     playIntroTune: playIntroTune.value,
@@ -218,7 +236,7 @@ function handleCreateRoom() {
   // Save settings to localStorage (except timer - it auto-updates based on word length)
   localStorage.setItem('lingoGameSettings', JSON.stringify({
     player1Name: settings.player1Name,
-    player2Name: settings.player2Name,
+    player2Name: player2Name.value || 'Speler 2', // Always save for consistency
     wordLength: settings.wordLength,
     showHintLetters: settings.showHintLetters,
     playIntroTune: settings.playIntroTune
@@ -229,22 +247,39 @@ function handleCreateRoom() {
   emit('close')
 }
 
+function handleShowCreateDialog() {
+  multiplayerMode.value = 'create'
+}
+
 function handleShowJoinDialog() {
+  multiplayerMode.value = 'join'
   showJoinDialog.value = true
 }
 
 function handleJoinRoom() {
   const code = joinCode.value.trim()
   if (code) {
+    // Save player names for consistency
+    localStorage.setItem('lingoGameSettings', JSON.stringify({
+      player1Name: player1Name.value || 'Speler 1',
+      player2Name: player2Name.value || 'Speler 2'
+    }))
+    
     cleanup()
-    emit('joinRoom', code.toUpperCase())
+    // Pass the player name as joiner's name
+    emit('joinRoom', code.toUpperCase(), player1Name.value || 'Speler 2')
     emit('close')
   }
 }
 
 function handleCancelJoin() {
+  multiplayerMode.value = null
   showJoinDialog.value = false
   joinCode.value = ''
+}
+
+function handleCancelMultiplayer() {
+  multiplayerMode.value = null
 }
 
 function handleJoinCodeInput(event) {
