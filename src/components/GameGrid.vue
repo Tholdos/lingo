@@ -315,6 +315,7 @@ onUnmounted(() => {
 .grid-wrapper {
   overflow: hidden;
   max-width: 100%;
+  padding: 3px;
 }
 
 .game-grid {
