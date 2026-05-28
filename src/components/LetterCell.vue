@@ -185,6 +185,7 @@ const stateClass = computed(() => {
 @media (max-width: 768px) {
   .letter-text {
     font-size: 20px;
+    transform: translateY(1px); /* Adjust for font vertical metrics */
   }
   
   .word-length-7 .letter-text {
@@ -207,6 +208,7 @@ const stateClass = computed(() => {
 @media (max-width: 480px) {
   .letter-text {
     font-size: 18px;
+    transform: translateY(1px); /* Adjust for font vertical metrics */
   }
   
   .word-length-7 .letter-text {

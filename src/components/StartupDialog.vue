@@ -259,10 +259,13 @@ function handleShowJoinDialog() {
 function handleJoinRoom() {
   const code = joinCode.value.trim()
   if (code) {
-    // Save player names for consistency
+    // Save all settings for consistency
     localStorage.setItem('lingoGameSettings', JSON.stringify({
       player1Name: player1Name.value || 'Speler 1',
-      player2Name: player2Name.value || 'Speler 2'
+      player2Name: player2Name.value || 'Speler 2',
+      wordLength: wordLength.value,
+      showHintLetters: showHintLetters.value,
+      playIntroTune: playIntroTune.value
     }))
     
     cleanup()
