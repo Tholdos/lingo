@@ -175,12 +175,12 @@ function handleViewportChange() {
   // Calculate scale factor to fit UI when keyboard is visible on mobile
   if (keyboardVisible && window.innerWidth <= 768) {
     // Estimate the height needed for UI (title + players + grid + gaps)
-    // Title: ~40px, Players: ~80px, Grid: depends on word length but roughly 350-450px, gaps: ~30px
-    const estimatedUIHeight = 500
-    const availableHeight = currentHeight - 40 // Leave some padding
+    // Title: ~40px, Players: ~80px, Grid: depends on word length but roughly 300-400px, gaps: ~30px
+    const estimatedUIHeight = 420
+    const availableHeight = currentHeight - 20 // Leave minimal padding
     
     if (availableHeight < estimatedUIHeight) {
-      uiScale.value = Math.max(0.6, availableHeight / estimatedUIHeight)
+      uiScale.value = Math.max(0.75, availableHeight / estimatedUIHeight)
     } else {
       uiScale.value = 1
     }
