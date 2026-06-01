@@ -1,5 +1,5 @@
 <template>
-  <div class="game-container" ref="gameContainer" @click="focusMobileInput">
+  <div class="game-container" ref="gameContainer" @click="focusMobileInput" :style="{ '--ui-scale': uiScale }">
     <h1 class="lingo-title">LINGO</h1>
     
     <!-- Speaker icon for sound toggle -->
@@ -30,7 +30,7 @@
       </div>
     </div>
 
-    <div class="players-panel">
+    <div class="players-panel scalable">
       <PlayerPanel 
         :player="gameStore.player1" 
         :is-active="gameStore.activePlayer === 1"
@@ -48,7 +48,7 @@
     </div>
     
     <!-- Game grid with dynamic sizing based on word length -->
-    <div v-if="gameStore.showGrid" class="grid-wrapper">
+    <div v-if="gameStore.showGrid" class="grid-wrapper scalable">
       <div class="game-grid" ref="gameGridRef" :class="['word-length-' + gameStore.wordLength, { 'reveal-animation': gameStore.isAnimatingReveal }]">
         <div v-for="(row, rowIndex) in visibleCells" :key="rowIndex" class="row">
           <LetterCell 
@@ -84,6 +84,7 @@ const gameStore = useGameStore()
 const mobileInput = ref(null)
 const gameContainer = ref(null)
 const gameGridRef = ref(null)
+const uiScale = ref(1)
 let lastInputValue = ''
 let keyboardVisible = false
 let initialViewportHeight = window.innerHeight
@@ -168,8 +169,24 @@ function handleViewportChange() {
   const currentHeight = window.visualViewport?.height || window.innerHeight
   const heightDifference = initialViewportHeight - currentHeight
   
-  // Track keyboard state but don't trigger scrolling
+  // Track keyboard state
   keyboardVisible = heightDifference > 150
+  
+  // Calculate scale factor to fit UI when keyboard is visible on mobile
+  if (keyboardVisible && window.innerWidth <= 768) {
+    // Estimate the height needed for UI (title + players + grid + gaps)
+    // Title: ~40px, Players: ~80px, Grid: depends on word length but roughly 350-450px, gaps: ~30px
+    const estimatedUIHeight = 500
+    const availableHeight = currentHeight - 40 // Leave some padding
+    
+    if (availableHeight < estimatedUIHeight) {
+      uiScale.value = Math.max(0.6, availableHeight / estimatedUIHeight)
+    } else {
+      uiScale.value = 1
+    }
+  } else {
+    uiScale.value = 1
+  }
 }
 
 // Watch for changes in current row
@@ -211,6 +228,7 @@ onUnmounted(() => {
   padding: 1.5rem 1rem 2rem 1rem;
   min-height: 100vh;
   overflow: visible;
+  --ui-scale: 1;
 }
 
 @media (max-width: 768px) {
@@ -218,6 +236,13 @@ onUnmounted(() => {
     padding: 0.5rem;
     gap: 0.25rem;
     padding-bottom: 10vh; /* Reduced padding since no auto-scroll */
+  }
+  
+  /* Apply scaling to specific elements when keyboard is visible */
+  .scalable {
+    transform: scale(var(--ui-scale));
+    transform-origin: top center;
+    transition: transform 0.2s ease;
   }
 }
 
