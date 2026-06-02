@@ -1473,7 +1473,10 @@ export const useGameStore = defineStore('game', () => {
       isAnimatingReveal: isAnimatingReveal.value,
       invalidWordData: invalidWordData.value,
       bypassNextValidation: bypassNextValidation.value,
-      guessedWords: Array.from(guessedWords.value)
+      guessedWords: Array.from(guessedWords.value),
+      timerShort: timerShort.value,
+      timerMedium: timerMedium.value,
+      timerLong: timerLong.value
     }
     
     socket.value.emit('updateGameState', { roomId: roomId.value, gameState: state })
@@ -1485,15 +1488,24 @@ export const useGameStore = defineStore('game', () => {
     activePlayer.value = state.activePlayer
     if (state.targetWord) targetWord.value = state.targetWord
     currentRow.value = state.currentRow
-    currentColumn.value = state.currentColumn
     wordLength.value = state.wordLength
-    cells.value = state.cells
     revealedPositions.value = new Set(state.revealedPositions)
     timeRemaining.value = state.timeRemaining
     isTimerActive.value = state.isTimerActive
     showHintLetters.value = state.showHintLetters
     gameStarted.value = state.gameStarted
     showGrid.value = state.showGrid || gameStarted.value
+    
+    // Update timer settings if provided
+    if (state.timerShort !== undefined) timerShort.value = state.timerShort
+    if (state.timerMedium !== undefined) timerMedium.value = state.timerMedium
+    if (state.timerLong !== undefined) timerLong.value = state.timerLong
+    
+    // Don't update cells and currentColumn if it's our turn (prevents overwriting while typing)
+    if (!isMyTurn()) {
+      currentColumn.value = state.currentColumn
+      cells.value = state.cells
+    }
     
     // Sync overlay state
     if (state.showOverlay !== undefined) {

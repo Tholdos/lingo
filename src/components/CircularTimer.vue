@@ -76,7 +76,7 @@ const dashOffset = computed(() => {
   stroke: #fbbf24;
   stroke-width: 8;
   stroke-linecap: round;
-  stroke-dasharray: 282.7;
+  stroke-dasharray: 282.743; /* 2 * π * 45 */
   transition: none;
 }
 
