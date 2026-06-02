@@ -48,27 +48,29 @@
     </div>
     
     <!-- Game grid with dynamic sizing based on word length -->
-    <div v-if="gameStore.showGrid" class="grid-wrapper scalable">
-      <div class="game-grid" ref="gameGridRef" :class="['word-length-' + gameStore.wordLength, { 'reveal-animation': gameStore.isAnimatingReveal }]">
-        <div v-for="(row, rowIndex) in visibleCells" :key="rowIndex" class="row">
-          <LetterCell 
-            v-for="(cell, colIndex) in row" 
-            :key="colIndex"
-            :letter="cell.letter"
-            :state="cell.state"
-            :is-active="rowIndex === gameStore.currentRow && colIndex === gameStore.currentColumn"
-            :is-victory-mode="gameStore.isVictoryMode"
-            :row-index="rowIndex"
-            :winning-row="gameStore.currentRow"
-          />
+    <div v-if="gameStore.showGrid" class="grid-and-status-wrapper scalable">
+      <div class="grid-wrapper">
+        <div class="game-grid" ref="gameGridRef" :class="['word-length-' + gameStore.wordLength, { 'reveal-animation': gameStore.isAnimatingReveal }]">
+          <div v-for="(row, rowIndex) in visibleCells" :key="rowIndex" class="row">
+            <LetterCell 
+              v-for="(cell, colIndex) in row" 
+              :key="colIndex"
+              :letter="cell.letter"
+              :state="cell.state"
+              :is-active="rowIndex === gameStore.currentRow && colIndex === gameStore.currentColumn"
+              :is-victory-mode="gameStore.isVictoryMode"
+              :row-index="rowIndex"
+              :winning-row="gameStore.currentRow"
+            />
+          </div>
         </div>
+      </div>
+      
+      <div class="status-message" v-if="gameStore.isMultiplayer && !gameStore.isMyTurn()">
+        Wacht op {{ gameStore.activePlayerName }}...
       </div>
     </div>
     <!-- END OF CHANGED SECTION -->
-
-    <div class="status-message" v-if="gameStore.isMultiplayer && !gameStore.isMyTurn()">
-      Wacht op {{ gameStore.activePlayerName }}...
-    </div>
   </div>
 </template>
 
@@ -337,6 +339,13 @@ onUnmounted(() => {
   }
 }
 
+.grid-and-status-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .grid-wrapper {
   overflow: hidden;
   max-width: 100%;
@@ -435,6 +444,8 @@ onUnmounted(() => {
   text-align: center;
   user-select: none;
   caret-color: transparent;
+  margin-top: 0.25rem;
+  width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -520,11 +531,15 @@ onUnmounted(() => {
     margin-top: 0.3rem;
   }
   
-  .game-grid {
+  .grid-and-status-wrapper {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 2 / 4;
     align-self: start;
     justify-self: center;
+    gap: 0.3rem;
+  }
+  
+  .game-grid {
     gap: 0.25rem;
     margin-top: 0;
   }
@@ -539,8 +554,6 @@ onUnmounted(() => {
   }
   
   .status-message {
-    grid-column: 1 / -1;
-    grid-row: 3;
     font-size: 0.8rem;
   }
 }
