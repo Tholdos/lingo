@@ -51,6 +51,14 @@ export const useGameStore = defineStore('game', () => {
   const socket = ref(null)
   const roomId = ref(null)
   const joinerName = ref(null) // Store joiner's name when they join
+  const isMultiplayer = ref(false)
+  const isHost = ref(false)
+  const isConnected = ref(false)
+  const waitingForPlayer = ref(false)
+  const isReconnecting = ref(false)
+  let reconnectAttempts = 0
+  const MAX_RECONNECT_ATTEMPTS = 5
+  let serverUrl = null
 
   // Load sound preference from localStorage
   try {
@@ -61,10 +69,6 @@ export const useGameStore = defineStore('game', () => {
   } catch (e) {
     console.error('Failed to load sound preference:', e)
   }
-  const isMultiplayer = ref(false)
-  const isHost = ref(false)
-  const isConnected = ref(false)
-  const waitingForPlayer = ref(false)
 
   // Preload audio files for smoother playback
   const audioCache = {
@@ -1244,28 +1248,42 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // Multiplayer functions
-  function connectToServer(serverUrl) {
-    socket.value = io(serverUrl)
+  function connectToServer(url) {
+    serverUrl = url
+    socket.value = io(url)
     
     socket.value.on('connect', () => {
       isConnected.value = true
+      reconnectAttempts = 0
       console.log('Connected to server')
+      
+      // If we were reconnecting and have a room, try to rejoin
+      if (isReconnecting.value && roomId.value) {
+        attemptRejoinRoom()
+      }
     })
 
     socket.value.on('disconnect', () => {
       isConnected.value = false
       console.log('Disconnected from server')
+      
+      // If we're in a multiplayer game, attempt to reconnect
+      if (isMultiplayer.value && roomId.value && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        isReconnecting.value = true
+      }
     })
     
     socket.value.on('roomCreated', (id) => {
       roomId.value = id
       waitingForPlayer.value = true
+      isReconnecting.value = false
       console.log('Room created:', id)
     })
 
     socket.value.on('roomJoined', (id) => {
       roomId.value = id
       waitingForPlayer.value = false
+      isReconnecting.value = false
       console.log('Room joined:', id)
     })
     
@@ -1294,6 +1312,41 @@ export const useGameStore = defineStore('game', () => {
     socket.value.on('joinError', (message) => {
       alert(message)
     })
+  }
+  
+  async function attemptRejoinRoom() {
+    if (!roomId.value || !socket.value || !isConnected.value) {
+      isReconnecting.value = false
+      return
+    }
+    
+    console.log('Attempting to rejoin room:', roomId.value)
+    reconnectAttempts++
+    
+    // Try to rejoin the room
+    const playerName = isHost.value ? player1.value.name : (joinerName.value || player2.value.name)
+    socket.value.emit('joinRoom', { roomId: roomId.value, playerName })
+    
+    // If we're the host, re-emit the current game state
+    if (isHost.value && gameStarted.value) {
+      setTimeout(() => {
+        emitGameState()
+      }, 500)
+    }
+  }
+  
+  async function reconnectSocket() {
+    if (!serverUrl || !isMultiplayer.value || !roomId.value) return
+    
+    isReconnecting.value = true
+    
+    // Close existing socket if any
+    if (socket.value) {
+      socket.value.close()
+    }
+    
+    // Reconnect
+    connectToServer(serverUrl)
   }
 
   async function createRoom() {
@@ -1472,6 +1525,7 @@ export const useGameStore = defineStore('game', () => {
     bypassNextValidation,
     soundEnabled,
     turnSwitchCount,
+    isReconnecting,
     
     // Computed
     currentGuess,
@@ -1499,6 +1553,7 @@ export const useGameStore = defineStore('game', () => {
     startTimer,
     retryInvalidWord,
     toggleSound,
-    emitGameState
+    emitGameState,
+    reconnectSocket
   }
 })

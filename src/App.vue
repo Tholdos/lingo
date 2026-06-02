@@ -21,6 +21,14 @@
         <button @click="handleCancelRoom" class="btn btn-secondary">Annuleren</button>
       </div>
     </div>
+    
+    <!-- Reconnecting indicator -->
+    <div v-if="gameStore.isReconnecting && gameStore.gameStarted" class="reconnecting-overlay">
+      <div class="reconnecting-content">
+        <div class="spinner"></div>
+        <p>Verbinding herstellen...</p>
+      </div>
+    </div>
 
     <GameGrid v-if="gameStore.gameStarted" />
 
@@ -66,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useGameStore } from '@/stores/gameStore'
 import StartupDialog from '@/components/StartupDialog.vue'
 import GameGrid from '@/components/GameGrid.vue'
@@ -174,7 +182,31 @@ onMounted(async () => {
 
   // Keyboard handling
   window.addEventListener('keydown', handleKeyPress)
+  
+  // Handle app visibility changes (backgrounding/foregrounding)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyPress)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
+
+function handleVisibilityChange() {
+  if (!document.hidden) {
+    // App came back to foreground
+    console.log('App returned to foreground')
+    
+    // If we're in multiplayer and not connected, try to reconnect
+    if (gameStore.isMultiplayer && !gameStore.isConnected && gameStore.roomId) {
+      console.log('Attempting to reconnect...')
+      gameStore.reconnectSocket()
+    }
+  } else {
+    // App went to background
+    console.log('App went to background')
+  }
+}
 
 function handleStart(settings: { player1Name: string, player2Name: string, wordLength: number, showHintLetters: boolean, playIntroTune: boolean }) {
   gameStore.startGame(settings)
@@ -552,6 +584,68 @@ body {
     font-size: 2rem;
     letter-spacing: 0.3rem;
     padding: 1rem 1.5rem;
+  }
+}
+
+/* Reconnecting overlay styles */
+.reconnecting-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2500;
+  backdrop-filter: blur(4px);
+}
+
+.reconnecting-content {
+  background: #1a202c;
+  padding: 2rem 3rem;
+  border-radius: 12px;
+  text-align: center;
+  border: 2px solid #fbbf24;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.reconnecting-content p {
+  color: #fbbf24;
+  font-size: 1.2rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.spinner {
+  border: 4px solid #2d3748;
+  border-top: 4px solid #fbbf24;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .reconnecting-content {
+    padding: 1.5rem 2rem;
+    max-width: 90%;
+  }
+  
+  .reconnecting-content p {
+    font-size: 1rem;
+  }
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
   }
 }
 </style>
