@@ -1502,8 +1502,9 @@ export const useGameStore = defineStore('game', () => {
     if (state.timerLong !== undefined) timerLong.value = state.timerLong
     
     // Only skip cell/column updates if it's our turn AND we've started typing (prevents overwriting while typing)
-    // Always update when: not our turn, or our turn but haven't started typing yet (column is 0)
-    const shouldUpdateCells = !isMyTurn() || currentColumn.value === 0
+    // Check the INCOMING state's currentColumn, not our local one
+    const incomingColumnEmpty = state.currentColumn === 0
+    const shouldUpdateCells = !isMyTurn() || incomingColumnEmpty
     
     if (shouldUpdateCells) {
       currentColumn.value = state.currentColumn
