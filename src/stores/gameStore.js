@@ -58,6 +58,7 @@ export const useGameStore = defineStore('game', () => {
   const isReconnecting = ref(false)
   let reconnectAttempts = 0
   const MAX_RECONNECT_ATTEMPTS = 5
+  let rejoinTimeout = null
   let serverUrl = null
 
   // Load sound preference from localStorage
@@ -1284,6 +1285,11 @@ export const useGameStore = defineStore('game', () => {
       roomId.value = id
       waitingForPlayer.value = false
       isReconnecting.value = false
+      // Clear rejoin timeout if it exists
+      if (rejoinTimeout) {
+        clearTimeout(rejoinTimeout)
+        rejoinTimeout = null
+      }
       console.log('Room joined:', id)
     })
     
@@ -1301,6 +1307,15 @@ export const useGameStore = defineStore('game', () => {
       // Don't update if we're currently processing a guess to avoid conflicts
       if (!isProcessingGuess.value) {
         updateFromGameState(state)
+        // If we were reconnecting and received game state, reconnection was successful
+        if (isReconnecting.value) {
+          isReconnecting.value = false
+          if (rejoinTimeout) {
+            clearTimeout(rejoinTimeout)
+            rejoinTimeout = null
+          }
+          console.log('Successfully reconnected and synced game state')
+        }
       }
     })
     
@@ -1310,7 +1325,18 @@ export const useGameStore = defineStore('game', () => {
     })
 
     socket.value.on('joinError', (message) => {
-      alert(message)
+      // Clear reconnecting state on error
+      if (isReconnecting.value) {
+        isReconnecting.value = false
+        console.log('Reconnection failed:', message)
+        // If we were trying to reconnect, inform the user
+        if (reconnectAttempts > 0) {
+          alert('Kan niet opnieuw verbinden met de kamer. De kamer bestaat mogelijk niet meer.')
+          resetMultiplayer()
+        }
+      } else {
+        alert(message)
+      }
     })
   }
   
@@ -1323,6 +1349,19 @@ export const useGameStore = defineStore('game', () => {
     console.log('Attempting to rejoin room:', roomId.value)
     reconnectAttempts++
     
+    // Set a timeout to clear reconnecting state if rejoin doesn't work
+    rejoinTimeout = setTimeout(() => {
+      if (isReconnecting.value) {
+        console.log('Rejoin timeout - clearing reconnecting state')
+        isReconnecting.value = false
+        // If we're still not in a game after timeout, reset
+        if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+          alert('Kan geen verbinding maken met de kamer. De sessie is mogelijk verlopen.')
+          resetMultiplayer()
+        }
+      }
+    }, 5000) // 5 second timeout for rejoin attempt
+    
     // Try to rejoin the room
     const playerName = isHost.value ? player1.value.name : (joinerName.value || player2.value.name)
     socket.value.emit('joinRoom', { roomId: roomId.value, playerName })
@@ -1330,7 +1369,9 @@ export const useGameStore = defineStore('game', () => {
     // If we're the host, re-emit the current game state
     if (isHost.value && gameStarted.value) {
       setTimeout(() => {
-        emitGameState()
+        if (isConnected.value) {
+          emitGameState()
+        }
       }, 500)
     }
   }
@@ -1483,6 +1524,13 @@ export const useGameStore = defineStore('game', () => {
     roomId.value = null
     waitingForPlayer.value = false
     joinerName.value = null
+    isReconnecting.value = false
+    reconnectAttempts = 0
+    // Clear rejoin timeout if it exists
+    if (rejoinTimeout) {
+      clearTimeout(rejoinTimeout)
+      rejoinTimeout = null
+    }
     socket.value?.disconnect()
     socket.value = null
   }
