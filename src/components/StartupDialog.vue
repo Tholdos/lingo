@@ -464,12 +464,11 @@ function handleStartSoloGame() {
     timerEnabled: timerToggle.value
   }
   
-  // Save settings to localStorage
+  // Save settings to localStorage (don't save showHintLetters for solo mode)
   localStorage.setItem('lingoGameSettings', JSON.stringify({
     player1Name: settings.player1Name,
     player2Name: player2Name.value || 'Speler 2',
     wordLength: settings.wordLength,
-    showHintLetters: settings.showHintLetters,
     playIntroTune: playIntroTune.value
   }))
   
