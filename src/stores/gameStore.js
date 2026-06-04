@@ -47,6 +47,11 @@ export const useGameStore = defineStore('game', () => {
   const invalidWordData = ref(null)  // { word: string, type: 'invalid' | 'duplicate' | 'wrongFirstLetter' }
   const bypassNextValidation = ref(false)  // Flag to bypass dictionary check on next submit (for accepted invalid words)
   
+  // Solo mode
+  const isSoloMode = ref(false)
+  const timerEnabled = ref(true)  // Whether timer is enabled in solo mode
+  const soloGuessCount = ref(0)  // Track number of guesses in solo mode (max 5)
+  
   // Multiplayer
   const socket = ref(null)
   const roomId = ref(null)
@@ -164,6 +169,7 @@ export const useGameStore = defineStore('game', () => {
     bypassNextValidation.value = false  // Reset bypass flag
     roundStartPlayer.value = activePlayer.value
     isVictoryMode.value = false
+    soloGuessCount.value = 0  // Reset solo guess counter
     
     initializeGrid()
     
@@ -194,6 +200,10 @@ export const useGameStore = defineStore('game', () => {
     wordLength.value = settings.wordLength
     showHintLetters.value = settings.showHintLetters
     
+    // Solo mode settings
+    isSoloMode.value = settings.isSoloMode || false
+    timerEnabled.value = settings.timerEnabled !== undefined ? settings.timerEnabled : true
+    
     // Apply custom timer duration if provided, otherwise use defaults
     if (settings.timerDuration !== undefined) {
       // Set all three timer values based on provided duration
@@ -213,10 +223,10 @@ export const useGameStore = defineStore('game', () => {
     showGrid.value = false
     
     // Play intro tune only if:
-    // 1. Not in multiplayer mode
+    // 1. Not in multiplayer mode and not solo mode
     // 2. Sound is enabled
     // 3. User has enabled playIntroTune
-    const shouldPlayIntro = !isMultiplayer.value && soundEnabled.value && settings.playIntroTune
+    const shouldPlayIntro = !isMultiplayer.value && !isSoloMode.value && soundEnabled.value && settings.playIntroTune
     
     if (shouldPlayIntro) {
       playIntroTune()
@@ -439,7 +449,9 @@ export const useGameStore = defineStore('game', () => {
         player2.value.score += 50
       }
       
-      overlayMessage.value = `${activePlayerName.value} heeft het woord geraden!`
+      // In solo mode, always show player 1's name
+      const winnerName = isSoloMode.value ? player1.value.name : activePlayerName.value
+      overlayMessage.value = isSoloMode.value ? 'Woord geraden!' : `${winnerName} heeft het woord geraden!`
       
       // Emit state immediately for multiplayer sync (victory mode, stopped timer, updated score)
       if (isMultiplayer.value) {
@@ -463,6 +475,27 @@ export const useGameStore = defineStore('game', () => {
     }
     
     // Wrong guess - check row and turn switch count to determine action
+    // In solo mode, check guess count instead
+    if (isSoloMode.value) {
+      soloGuessCount.value++
+      
+      if (soloGuessCount.value >= 5) {
+        // Max guesses reached in solo mode, reveal word
+        await revealWord()
+        isProcessingGuess.value = false
+        return 'revealed'
+      } else {
+        // Continue to next row
+        currentRow.value++
+        currentColumn.value = 0
+        copyHintsToNextRow()
+        startTimer()
+        
+        isProcessingGuess.value = false
+        return 'continue'
+      }
+    }
+    
     if (currentRow.value >= 4) {
       // Row 4+: Wrong word triggers turn switch
       if (turnSwitchCount.value >= 2) {
@@ -575,6 +608,11 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function revealBonusLetter() {
+    // Don't reveal bonus letters in solo mode
+    if (isSoloMode.value) {
+      return
+    }
+    
     // Count how many positions are currently unrevealed
     const unrevealedCount = Array.from({ length: wordLength.value }, (_, i) => i)
       .filter(i => !revealedPositions.value.has(i)).length
@@ -624,6 +662,13 @@ export const useGameStore = defineStore('game', () => {
 
   function startTimer() {
     stopTimer()
+    
+    // Skip timer if disabled in solo mode
+    if (isSoloMode.value && !timerEnabled.value) {
+      isTimerActive.value = false
+      return
+    }
+    
     isTimerActive.value = true
     timeRemaining.value = getTimerDuration(wordLength.value)
     
@@ -860,7 +905,10 @@ export const useGameStore = defineStore('game', () => {
     // Set active player back to round start player for next word
     activePlayer.value = roundStartPlayer.value
     
-    overlayMessage.value = `Niemand heeft het woord geraden. Het woord was: ${targetWord.value.replace(/\u0178/g, 'IJ')}`
+    const failureMessage = isSoloMode.value 
+      ? `Woord niet geraden. Het woord was: ${targetWord.value.replace(/\u0178/g, 'IJ')}`
+      : `Niemand heeft het woord geraden. Het woord was: ${targetWord.value.replace(/\u0178/g, 'IJ')}`
+    overlayMessage.value = failureMessage
     showOverlay.value = true
     
     // Emit state for multiplayer
@@ -1590,6 +1638,9 @@ export const useGameStore = defineStore('game', () => {
     soundEnabled,
     turnSwitchCount,
     isReconnecting,
+    isSoloMode,
+    timerEnabled,
+    soloGuessCount,
     
     // Computed
     currentGuess,

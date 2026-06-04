@@ -8,95 +8,255 @@
         <SpeakerIcon />
       </div>
       
-      <div class="form-group">
-        <label>{{ playerNameLabel }}</label>
-        <input 
-          v-model="player1Name" 
-          type="text" 
-          :placeholder="multiplayerMode ? 'Jouw naam' : 'Speler 1'" 
-          ref="player1Input" 
-          @focus="selectAll"
-          inputmode="text"
-          autocomplete="off"
-          autocorrect="off"
-          autocapitalize="words"
-          spellcheck="false"
-        />
+      <!-- Tab Navigation -->
+      <div class="tab-navigation">
+        <button 
+          @click="activeTab = 'solo'"
+          :class="['tab-button', { active: activeTab === 'solo' }]"
+        >
+          Solo
+        </button>
+        <button 
+          @click="activeTab = 'local'"
+          :class="['tab-button', { active: activeTab === 'local' }]"
+        >
+          Duel
+        </button>
+        <button 
+          @click="activeTab = 'daily'"
+          :class="['tab-button', { active: activeTab === 'daily' }]"
+          disabled
+        >
+          Lingo van de dag
+        </button>
+        <button 
+          @click="activeTab = 'multiplayer'"
+          :class="['tab-button', { active: activeTab === 'multiplayer' }]"
+        >
+          Multiplayer
+        </button>
       </div>
+      
+      <!-- Solo Tab Content -->
+      <div v-if="activeTab === 'solo'" class="tab-content">
+        <div class="form-group">
+          <label>Speler:</label>
+          <input 
+            v-model="player1Name" 
+            type="text" 
+            placeholder="Jouw naam" 
+            ref="player1Input" 
+            @focus="selectAll"
+            inputmode="text"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="words"
+            spellcheck="false"
+          />
+        </div>
 
-      <div v-if="!multiplayerMode" class="form-group">
-        <label>Speler 2:</label>
-        <input 
-          v-model="player2Name" 
-          type="text" 
-          placeholder="Speler 2" 
-          ref="player2Input" 
-          @focus="selectAll"
-          inputmode="text"
-          autocomplete="off"
-          autocorrect="off"
-          autocapitalize="words"
-          spellcheck="false"
-        />
-      </div>
+        <div class="form-group">
+          <label>Woordlengte:</label>
+          <select v-model.number="wordLength" class="word-length-select">
+            <option :value="5">5 letters</option>
+            <option :value="6">6 letters</option>
+            <option :value="7">7 letters</option>
+            <option :value="8">8 letters</option>
+            <option :value="9">9 letters</option>
+            <option :value="10">10 letters</option>
+          </select>
+        </div>
 
-      <div v-if="multiplayerMode !== 'join'" class="form-group">
-        <label>Woordlengte:</label>
-        <select v-model.number="wordLength" class="word-length-select">
-          <option :value="5">5 letters</option>
-          <option :value="6">6 letters</option>
-          <option :value="7">7 letters</option>
-          <option :value="8">8 letters</option>
-          <option :value="9">9 letters</option>
-          <option :value="10">10 letters</option>
-        </select>
-      </div>
+        <div class="form-group">
+          <label><input type="checkbox" v-model="timerToggle" /> Timer gebruiken</label>
+        </div>
 
-      <div v-if="multiplayerMode !== 'join'" class="form-group">
-        <label>Timer (seconden):</label>
-        <input v-model.number="displayedTimerDuration" type="number" min="6" max="61" class="timer-input" />
-      </div>
+        <div class="form-group" v-if="timerToggle">
+          <label>Timer (seconden):</label>
+          <input v-model.number="displayedTimerDuration" type="number" min="6" max="61" class="timer-input" />
+        </div>
 
-      <div v-if="multiplayerMode !== 'join'" class="form-group">
-        <label><input type="checkbox" v-model="showHintLetters" /> Bonusletter weergeven bij beurtverlies</label>
-      </div>
-
-      <div v-if="!multiplayerMode" class="form-group">
-        <label><input type="checkbox" v-model="playIntroTune" /> Intro afspelen</label>
-      </div>
-
-      <div v-if="!multiplayerMode" class="button-group">
-        <button @click="handleStartGame" class="btn btn-primary" title="Druk op Enter">Start spel</button>
-      </div>
-
-      <div v-if="multiplayerMode === 'create'" class="button-group">
-        <button @click="handleCreateRoom" class="btn btn-primary">Kamer maken</button>
-        <button @click="handleCancelMultiplayer" class="btn btn-secondary">Terug</button>
-      </div>
-
-      <div v-if="!multiplayerMode" class="multiplayer-section">
-        <h3>Multiplayer</h3>
         <div class="button-group">
-          <button @click="handleShowCreateDialog" class="btn btn-secondary">Maak kamer</button>
-          <button @click="handleShowJoinDialog" class="btn btn-secondary">Doe mee</button>
+          <button @click="handleStartSoloGame" class="btn btn-primary" title="Druk op Enter">Start spel</button>
         </div>
       </div>
+      
+      <!-- Local Duel Tab Content -->
+      <div v-if="activeTab === 'local'" class="tab-content">
+        <div class="form-group">
+          <label>Speler 1:</label>
+          <input 
+            v-model="player1Name" 
+            type="text" 
+            placeholder="Speler 1" 
+            ref="player1Input" 
+            @focus="selectAll"
+            inputmode="text"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="words"
+            spellcheck="false"
+          />
+        </div>
 
-      <div v-if="showJoinDialog" class="join-dialog">
-        <input 
-          v-model="joinCode" 
-          type="text" 
-          placeholder="Kamercode"
-          inputmode="text"
-          autocomplete="off"
-          autocorrect="off"
-          autocapitalize="characters"
-          spellcheck="false"
-          @input="handleJoinCodeInput"
-        />
+        <div class="form-group">
+          <label>Speler 2:</label>
+          <input 
+            v-model="player2Name" 
+            type="text" 
+            placeholder="Speler 2" 
+            ref="player2Input" 
+            @focus="selectAll"
+            inputmode="text"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="words"
+            spellcheck="false"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Woordlengte:</label>
+          <select v-model.number="wordLength" class="word-length-select">
+            <option :value="5">5 letters</option>
+            <option :value="6">6 letters</option>
+            <option :value="7">7 letters</option>
+            <option :value="8">8 letters</option>
+            <option :value="9">9 letters</option>
+            <option :value="10">10 letters</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Timer (seconden):</label>
+          <input v-model.number="displayedTimerDuration" type="number" min="6" max="61" class="timer-input" />
+        </div>
+
+        <div class="form-group">
+          <label><input type="checkbox" v-model="showHintLetters" /> Bonusletter weergeven bij beurtverlies</label>
+        </div>
+
+        <div class="form-group">
+          <label><input type="checkbox" v-model="playIntroTune" /> Intro afspelen</label>
+        </div>
+
         <div class="button-group">
-          <button @click="handleJoinRoom" class="btn btn-primary">Deelnemen</button>
-          <button @click="handleCancelJoin" class="btn btn-secondary">Terug</button>
+          <button @click="handleStartGame" class="btn btn-primary" title="Druk op Enter">Start spel</button>
+        </div>
+      </div>
+      
+      <!-- Multiplayer Tab Content -->
+      <div v-if="activeTab === 'multiplayer'" class="tab-content">
+        <div v-if="!multiplayerMode" class="multiplayer-menu">
+          <div class="form-group">
+            <label>{{ playerNameLabel }}</label>
+            <input 
+              v-model="player1Name" 
+              type="text" 
+              placeholder="Jouw naam" 
+              ref="player1Input" 
+              @focus="selectAll"
+              inputmode="text"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="words"
+              spellcheck="false"
+            />
+          </div>
+          
+          <div class="button-group">
+            <button @click="handleShowCreateDialog" class="btn btn-primary">Maak kamer</button>
+            <button @click="handleShowJoinDialog" class="btn btn-secondary">Doe mee</button>
+          </div>
+        </div>
+        
+        <div v-if="multiplayerMode === 'create'" class="multiplayer-create">
+          <div class="form-group">
+            <label>{{ playerNameLabel }}</label>
+            <input 
+              v-model="player1Name" 
+              type="text" 
+              placeholder="Jouw naam" 
+              ref="player1Input" 
+              @focus="selectAll"
+              inputmode="text"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="words"
+              spellcheck="false"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Woordlengte:</label>
+            <select v-model.number="wordLength" class="word-length-select">
+              <option :value="5">5 letters</option>
+              <option :value="6">6 letters</option>
+              <option :value="7">7 letters</option>
+              <option :value="8">8 letters</option>
+              <option :value="9">9 letters</option>
+              <option :value="10">10 letters</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Timer (seconden):</label>
+            <input v-model.number="displayedTimerDuration" type="number" min="6" max="61" class="timer-input" />
+          </div>
+
+          <div class="form-group">
+            <label><input type="checkbox" v-model="showHintLetters" /> Bonusletter weergeven bij beurtverlies</label>
+          </div>
+
+          <div class="button-group">
+            <button @click="handleCreateRoom" class="btn btn-primary">Kamer maken</button>
+            <button @click="handleCancelMultiplayer" class="btn btn-secondary">Terug</button>
+          </div>
+        </div>
+
+        <div v-if="showJoinDialog" class="join-dialog">
+          <div class="form-group">
+            <label>{{ playerNameLabel }}</label>
+            <input 
+              v-model="player1Name" 
+              type="text" 
+              placeholder="Jouw naam" 
+              @focus="selectAll"
+              inputmode="text"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="words"
+              spellcheck="false"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label>Kamercode:</label>
+            <input 
+              v-model="joinCode" 
+              type="text" 
+              placeholder="Kamercode"
+              inputmode="text"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              @input="handleJoinCodeInput"
+            />
+          </div>
+          
+          <div class="button-group">
+            <button @click="handleJoinRoom" class="btn btn-primary">Deelnemen</button>
+            <button @click="handleCancelJoin" class="btn btn-secondary">Terug</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Daily Lingo Tab Content (Placeholder) -->
+      <div v-if="activeTab === 'daily'" class="tab-content">
+        <div class="coming-soon">
+          <p>🎯 Lingo van de dag komt binnenkort!</p>
+          <p class="description">Elke dag een nieuw woord om te raden.</p>
         </div>
       </div>
     </div>
@@ -109,6 +269,7 @@ import SpeakerIcon from './SpeakerIcon.vue'
 
 const emit = defineEmits(['close', 'start', 'createRoom', 'joinRoom'])
 
+const activeTab = ref('solo') // 'local', 'multiplayer', 'daily', 'solo'
 const multiplayerMode = ref(null) // null = single player, 'create' = host, 'join' = joiner
 const player1Name = ref('Speler 1')
 const player2Name = ref('Speler 2')
@@ -116,6 +277,7 @@ const wordLength = ref(6)
 const showHintLetters = ref(true)
 const playIntroTune = ref(false)
 const timerDuration = ref(14)
+const timerToggle = ref(true)  // Timer enabled by default in solo mode
 const showJoinDialog = ref(false)
 const joinCode = ref('')
 const player1Input = ref(null)
@@ -123,7 +285,7 @@ const player2Input = ref(null)
 
 // Computed property for player name label
 const playerNameLabel = computed(() => {
-  if (multiplayerMode.value === 'create' || multiplayerMode.value === 'join') {
+  if (activeTab.value === 'multiplayer') {
     return 'Jouw naam:'
   }
   return 'Speler 1:'
@@ -147,6 +309,14 @@ function getDefaultTimer(len) {
 // Watch wordLength and update timer to default for that length
 watch(wordLength, (newLength) => {
   timerDuration.value = getDefaultTimer(newLength)
+})
+
+// Watch activeTab and reset multiplayerMode when switching tabs
+watch(activeTab, (newTab) => {
+  if (newTab !== 'multiplayer') {
+    multiplayerMode.value = null
+    showJoinDialog.value = false
+  }
 })
 
 onMounted(() => {
@@ -180,13 +350,17 @@ onMounted(() => {
 function handleKeyDown(event) {
   if (event.key === 'Enter') {
     event.preventDefault()
-    // If join dialog is active, press the "Deelnemen" button instead
-    if (showJoinDialog.value) {
-      handleJoinRoom()
-    } else if (multiplayerMode.value === 'create') {
-      handleCreateRoom()
-    } else if (!multiplayerMode.value) {
+    // Handle based on active tab and state
+    if (activeTab.value === 'solo') {
+      handleStartSoloGame()
+    } else if (activeTab.value === 'local') {
       handleStartGame()
+    } else if (activeTab.value === 'multiplayer') {
+      if (showJoinDialog.value) {
+        handleJoinRoom()
+      } else if (multiplayerMode.value === 'create') {
+        handleCreateRoom()
+      }
     }
   }
 }
@@ -197,6 +371,32 @@ function selectAll(event) {
 
 function cleanup() {
   window.removeEventListener('keydown', handleKeyDown)
+}
+
+function handleStartSoloGame() {
+  const settings = {
+    player1Name: player1Name.value || 'Speler 1',
+    player2Name: 'Computer',  // Placeholder for solo mode
+    wordLength: wordLength.value,
+    showHintLetters: false,  // No bonus letters in solo mode
+    playIntroTune: false,  // No intro in solo mode
+    timerDuration: timerToggle.value ? timerDuration.value : undefined,
+    isSoloMode: true,
+    timerEnabled: timerToggle.value
+  }
+  
+  // Save settings to localStorage
+  localStorage.setItem('lingoGameSettings', JSON.stringify({
+    player1Name: settings.player1Name,
+    player2Name: player2Name.value || 'Speler 2',
+    wordLength: settings.wordLength,
+    showHintLetters: settings.showHintLetters,
+    playIntroTune: playIntroTune.value
+  }))
+  
+  cleanup()
+  emit('start', settings)
+  emit('close')
 }
 
 function handleStartGame() {
@@ -314,22 +514,33 @@ onUnmounted(() => {
 }
 
 .dialog-content {
-  background: #1a202c;
-  padding: 2rem;
-  border-radius: 12px;
+  background: #1a1a2e;
+  padding: 2rem 2.5rem;
+  border-radius: 10px;
+  min-width: 350px;
   max-width: 500px;
-  width: 90%;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  user-select: none;
-  caret-color: transparent;
-  margin: auto 0;
+  margin: auto;
+  position: relative;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dialog-title {
   text-align: center;
-  font-size: 48px;
+  font-size: 3rem;
   font-weight: 900;
-  margin: 0 0 2rem 0;
+  margin: 0 0 1.5rem 0;
   padding: 0.25rem 0;
   background: linear-gradient(to right, #FFD700, #FFA500, #FF8C00);
   -webkit-background-clip: text;
@@ -338,153 +549,172 @@ onUnmounted(() => {
   filter: drop-shadow(2px 2px 8px rgba(0, 0, 0, 0.8));
   user-select: none;
   caret-color: transparent;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.2em;
   line-height: 1.2;
 }
 
 .speaker-icon-container {
   position: absolute;
-  top: 2rem;
-  right: 2rem;
-  z-index: 1100;
+  top: 1rem;
+  right: 1rem;
 }
 
-@media (max-width: 768px) {
-  .speaker-icon-container {
-    top: 1rem;
-    right: 1rem;
-  }
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #2d2d44;
+  padding-bottom: 0.5rem;
+}
+
+.tab-button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.tab-button:hover:not(:disabled) {
+  color: #fff;
+  border-bottom-color: #ffd700;
+}
+
+.tab-button.active {
+  color: #ffd700;
+  border-bottom-color: #ffd700;
+}
+
+.tab-button:disabled {
+  color: #555;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Tab Content */
+.tab-content {
+  animation: fadeIn 0.3s ease-in;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .form-group label {
   display: block;
-  color: #f3f4f6;
+  color: #fff;
   margin-bottom: 0.5rem;
-  font-weight: 600;
-  user-select: none;
-  caret-color: transparent;
+  font-size: 0.9rem;
 }
 
-.form-group input[type="text"] {
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select {
   width: 100%;
-  padding: 0.75rem;
-  border-radius: 6px;
-  border: 2px solid #4a5568;
-  background: #2d3748;
-  color: #f3f4f6;
+  padding: 0.7rem;
+  background: #2d2d44;
+  border: 2px solid #3d3d5c;
+  border-radius: 5px;
+  color: #fff;
   font-size: 1rem;
-  user-select: text;
-  caret-color: auto;
+  caret-color: #ffd700;
 }
 
-.timer-input {
-  width: 100%;
-  padding: 0.75rem;
-  border-radius: 6px;
-  border: 2px solid #4a5568;
-  background: #2d3748;
-  color: #f3f4f6;
-  font-size: 1rem;
-}
-
-.timer-input:focus {
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
+.form-group select:focus {
   outline: none;
-  border-color: #fbbf24;
+  border-color: #ffd700;
 }
 
-.word-length-select {
-  width: 100%;
-  padding: 0.75rem;
-  border-radius: 6px;
-  border: 2px solid #4a5568;
-  background: #2d3748;
-  color: #f3f4f6;
-  font-size: 1rem;
+.form-group input[type="checkbox"] {
+  margin-right: 0.5rem;
   cursor: pointer;
-  user-select: none;
-  caret-color: transparent;
+  width: auto;
 }
 
-.word-length-select:focus {
-  outline: none;
-  border-color: #fbbf24;
+.word-length-select,
+.timer-input {
+  cursor: pointer;
 }
 
 .button-group {
   display: flex;
   gap: 1rem;
-  justify-content: center;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
 }
 
 .btn {
-  padding: 0.75rem 2rem;
+  flex: 1;
+  padding: 0.9rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  vertical-align: middle;
+  letter-spacing: 0.05em;
 }
 
 .btn-primary {
-  background: #fbbf24;
-  color: #1a202c;
+  background: #ffd700;
+  color: #1a1a2e;
 }
 
 .btn-primary:hover {
-  background: #f59e0b;
+  background: #ffed4e;
   transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
 }
 
 .btn-secondary {
-  background: #4a5568;
-  color: #f3f4f6;
+  background: #3d3d5c;
+  color: #fff;
 }
 
 .btn-secondary:hover {
-  background: #2d3748;
+  background: #4d4d6c;
+  transform: translateY(-2px);
 }
 
 .multiplayer-section {
   margin-top: 2rem;
   padding-top: 2rem;
-  border-top: 2px solid #4a5568;
+  border-top: 2px solid #2d2d44;
 }
 
 .multiplayer-section h3 {
-  color: #f3f4f6;
+  color: #fff;
   text-align: center;
   margin-bottom: 1rem;
+  font-size: 1.2rem;
 }
 
 .join-dialog {
   margin-top: 1rem;
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
+  padding-top: 1rem;
+  border-top: 2px solid #2d2d44;
 }
 
-.join-dialog input {
-  flex: 1;
-  min-width: 150px;
-  padding: 0.75rem;
-  border-radius: 6px;
-  border: 2px solid #4a5568;
-  background: #2d3748;
-  color: #f3f4f6;
-  caret-color: #fbbf24;
-  text-transform: uppercase;
+.coming-soon {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.coming-soon p {
+  color: #fff;
+  font-size: 1.2rem;
+  margin: 0.5rem 0;
+}
+
+.coming-soon .description {
+  color: #888;
+  font-size: 0.9rem;
 }
 </style>

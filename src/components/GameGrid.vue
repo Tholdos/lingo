@@ -36,12 +36,13 @@
         :is-active="gameStore.activePlayer === 1"
       />
       <CircularTimer 
-        v-if="gameStore.showGrid"
+        v-if="gameStore.showGrid && (!gameStore.isSoloMode || gameStore.timerEnabled)"
         :time-remaining="gameStore.timeRemaining"
         :is-active="gameStore.isTimerActive"
         :max-duration="gameStore.currentTimerDuration"
       />
       <PlayerPanel 
+        v-if="!gameStore.isSoloMode"
         :player="gameStore.player2" 
         :is-active="gameStore.activePlayer === 2"
       />
