@@ -53,7 +53,7 @@
     <div v-if="gameStore.showGrid" class="grid-and-status-wrapper scalable">
       <div class="grid-wrapper">
         <div class="game-grid" ref="gameGridRef" :class="['word-length-' + gameStore.wordLength, { 'reveal-animation': gameStore.isAnimatingReveal }]">
-          <div v-for="(row, rowIndex) in visibleCells" :key="rowIndex" class="row">
+          <div v-for="(row, rowIndex) in visibleCells" :key="rowIndex" :class="['row', { 'dimmed-row': isRowAllIncorrect(rowIndex) && (gameStore.isSoloMode || gameStore.isDailyMode) }]">
             <LetterCell 
               v-for="(cell, colIndex) in row" 
               :key="colIndex"
@@ -95,6 +95,14 @@ let initialViewportHeight = window.innerHeight
 
 // Only display the first 5 rows (extra turns are handled via shifting)
 const visibleCells = computed(() => gameStore.cells.slice(0, 5))
+
+// Check if a row is all incorrect (for dimming effect in solo/daily mode)
+function isRowAllIncorrect(rowIndex) {
+  const row = visibleCells.value[rowIndex]
+  if (!row) return false
+  // Check if all cells in the row are incorrect
+  return row.every(cell => cell.state === 'incorrect' && cell.letter !== '')
+}
 
 function focusMobileInput() {
   if (gameStore.gameStarted && mobileInput.value) {
@@ -385,6 +393,11 @@ onUnmounted(() => {
   display: flex;
   gap: 0.4rem;
   justify-content: center;
+}
+
+/* Dim rows that are all incorrect (invalid words in solo/daily mode) */
+.row.dimmed-row {
+  opacity: 0.5;
 }
 
 @media (max-width: 768px) {

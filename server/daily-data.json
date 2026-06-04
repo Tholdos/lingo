@@ -7,6 +7,20 @@
         "wordsGuessed": 2,
         "timestamp": "2026-06-04T08:19:55.377Z"
       }
+    ],
+    "2026-06-04-6": [
+      {
+        "playerName": "Thomas",
+        "score": 500,
+        "wordsGuessed": 10,
+        "timestamp": "2026-06-04T11:12:14.184Z"
+      },
+      {
+        "playerName": "Henk",
+        "score": 50,
+        "wordsGuessed": 1,
+        "timestamp": "2026-06-04T11:25:36.915Z"
+      }
     ]
   },
   "completedPlayers": {
@@ -15,9 +29,17 @@
     "2026-06-04-5-François": true,
     "2026-06-04-8-François": true,
     "2026-06-04-8-Henk": true,
-    "2026-06-04-5-Henk": true
+    "2026-06-04-5-Henk": true,
+    "2026-06-04-6-Thomas": true,
+    "2026-06-04-6-Henk": true
   },
   "startedPlayers": {
-    "2026-06-04-5-Henk": true
+    "2026-06-04-5-Henk": true,
+    "2026-06-04-5-6": true,
+    "2026-06-04-9-François": true,
+    "2026-06-04-8-Frans": true,
+    "2026-06-04-5-Teker": true,
+    "2026-06-04-6-Thomas": true,
+    "2026-06-04-6-Henk": true
   }
 }

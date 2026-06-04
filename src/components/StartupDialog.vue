@@ -332,6 +332,10 @@ const props = defineProps({
   initialWordLength: {
     type: Number,
     default: 6
+  },
+  initialPlayerName: {
+    type: String,
+    default: ''
   }
 })
 
@@ -411,8 +415,19 @@ onMounted(() => {
     }
   }
   
+  // Override with initial player name if provided (for daily mode)
+  if (props.initialPlayerName) {
+    player1Name.value = props.initialPlayerName
+  }
+  
   // Set initial timer based on word length
   timerDuration.value = getDefaultTimer(wordLength.value)
+  
+  // If starting with daily tab, load leaderboard and check completion
+  if (activeTab.value === 'daily') {
+    loadDailyLeaderboard()
+    checkDailyCompleted()
+  }
   
   if (player1Input.value) {
     player1Input.value.focus()

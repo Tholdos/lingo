@@ -4,6 +4,7 @@
       v-if="showStartup"
       :initial-tab="initialTab"
       :initial-word-length="initialWordLength"
+      :initial-player-name="initialPlayerName"
       @close="showStartup = false"
       @start="handleStart"
       @create-room="handleCreateRoom"
@@ -93,6 +94,7 @@ const pendingGameSettings = ref(null)
 const copyButtonText = ref('Kopieer code')
 const initialTab = ref('solo')  // Default to solo tab
 const initialWordLength = ref(6)  // Default word length for daily mode
+const initialPlayerName = ref('')  // Player name for daily mode
 let dialogJustOpened = false
 
 // Display invalid word with IJ normalization
@@ -265,6 +267,9 @@ function handleNewGame() {
   initialTab.value = gameStore.lastGameMode
   if (gameStore.lastGameMode === 'daily') {
     initialWordLength.value = gameStore.lastWordLength
+    initialPlayerName.value = gameStore.player1.name
+  } else {
+    initialPlayerName.value = ''
   }
   
   showStartup.value = true
@@ -371,17 +376,24 @@ async function acceptInvalidWord() {
   }
 }
 
-function rejectInvalidWord() {
+async function rejectInvalidWord() {
   // Clear invalid word data
   gameStore.invalidWordData = null
-  // Emit immediately for multiplayer sync
-  if (gameStore.isMultiplayer) {
-    gameStore.emitGameState()
-  }
-  // Clear the state (this will emit state for multiplayer)
-  gameStore.retryInvalidWord()
-  // Close the dialog
+  // Close the dialog first
   invalidWordDialog.value = false
+  
+  // In solo mode, mark as incorrect and move to next row
+  if (gameStore.isSoloMode) {
+    gameStore.soloGuessCount++
+    await gameStore.markWordIncorrect()
+  } else {
+    // Emit immediately for multiplayer sync
+    if (gameStore.isMultiplayer) {
+      gameStore.emitGameState()
+    }
+    // Clear the state (this will emit state for multiplayer)
+    gameStore.retryInvalidWord()
+  }
 }
 </script>
 
