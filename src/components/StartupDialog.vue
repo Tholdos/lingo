@@ -25,7 +25,6 @@
         <button 
           @click="activeTab = 'daily'"
           :class="['tab-button', { active: activeTab === 'daily' }]"
-          disabled
         >
           Lingo van de dag
         </button>
@@ -252,11 +251,69 @@
         </div>
       </div>
       
-      <!-- Daily Lingo Tab Content (Placeholder) -->
+      <!-- Daily Lingo Tab Content -->
       <div v-if="activeTab === 'daily'" class="tab-content">
-        <div class="coming-soon">
-          <p>🎯 Lingo van de dag komt binnenkort!</p>
-          <p class="description">Elke dag een nieuw woord om te raden.</p>
+        <div class="form-group">
+          <label>Speler:</label>
+          <input 
+            v-model="player1Name" 
+            type="text" 
+            placeholder="Jouw naam" 
+            ref="player1Input" 
+            @focus="selectAll"
+            inputmode="text"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="words"
+            spellcheck="false"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Woordlengte:</label>
+          <select v-model.number="dailyWordLength" class="word-length-select">
+            <option :value="5">5 letters</option>
+            <option :value="6">6 letters</option>
+            <option :value="7">7 letters</option>
+            <option :value="8">8 letters</option>
+            <option :value="9">9 letters</option>
+            <option :value="10">10 letters</option>
+          </select>
+        </div>
+
+        <div v-if="dailyCompleted" class="daily-completed">
+          <p>✅ Je hebt deze woordlengte vandaag al gespeeld!</p>
+          <p class="hint">Probeer een andere woordlengte</p>
+        </div>
+
+        <div class="daily-info">
+          <p>Raad zo veel mogelijk woorden in 5 minuten</p>
+          <p class="hint">Elke woordlengte kan één keer per dag gespeeld worden</p>
+        </div>
+
+        <div class="leaderboard">
+          <h3>Top 5 van vandaag</h3>
+          <div v-if="dailyLeaderboard.length === 0" class="no-scores">
+            Nog geen scores vandaag
+          </div>
+          <div v-else class="leaderboard-list">
+            <div v-for="(entry, index) in dailyLeaderboard" :key="index" class="leaderboard-entry">
+              <span class="rank">{{ index + 1 }}.</span>
+              <span class="name">{{ entry.playerName }}</span>
+              <span class="score">{{ entry.score }} ({{ entry.wordsGuessed }} woorden)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button 
+            @click="handleStartDaily" 
+            class="btn btn-primary" 
+            :disabled="dailyCompleted || dailyLoading"
+            title="Druk op Enter"
+          >
+            {{ dailyLoading ? 'Laden...' : 'Start' }}
+          </button>
         </div>
       </div>
     </div>
@@ -267,9 +324,20 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import SpeakerIcon from './SpeakerIcon.vue'
 
+const props = defineProps({
+  initialTab: {
+    type: String,
+    default: 'solo'
+  },
+  initialWordLength: {
+    type: Number,
+    default: 6
+  }
+})
+
 const emit = defineEmits(['close', 'start', 'createRoom', 'joinRoom'])
 
-const activeTab = ref('solo') // 'local', 'multiplayer', 'daily', 'solo'
+const activeTab = ref(props.initialTab) // 'local', 'multiplayer', 'daily', 'solo'
 const multiplayerMode = ref(null) // null = single player, 'create' = host, 'join' = joiner
 const player1Name = ref('Speler 1')
 const player2Name = ref('Speler 2')
@@ -282,6 +350,13 @@ const showJoinDialog = ref(false)
 const joinCode = ref('')
 const player1Input = ref(null)
 const player2Input = ref(null)
+
+// Daily challenge state
+const dailyWordLength = ref(props.initialWordLength)
+const dailyCompleted = ref(false)
+const dailyLeaderboard = ref([])
+const dailyLoading = ref(false)
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://lingo-server-oybx.onrender.com'
 
 // Computed property for player name label
 const playerNameLabel = computed(() => {
@@ -355,6 +430,10 @@ function handleKeyDown(event) {
       handleStartSoloGame()
     } else if (activeTab.value === 'local') {
       handleStartGame()
+    } else if (activeTab.value === 'daily') {
+      if (!dailyCompleted.value && !dailyLoading.value) {
+        handleStartDaily()
+      }
     } else if (activeTab.value === 'multiplayer') {
       if (showJoinDialog.value) {
         handleJoinRoom()
@@ -489,6 +568,149 @@ function handleJoinCodeInput(event) {
   // Force uppercase for room code
   joinCode.value = event.target.value.toUpperCase()
 }
+
+// Daily challenge functions
+async function loadDailyLeaderboard() {
+  try {
+    const response = await fetch(`${SERVER_URL}/api/daily/leaderboard/${dailyWordLength.value}`)
+    const data = await response.json()
+    dailyLeaderboard.value = data.leaderboard || []
+  } catch (error) {
+    console.error('Error loading leaderboard:', error)
+    dailyLeaderboard.value = []
+  }
+}
+
+async function checkDailyCompleted() {
+  if (!player1Name.value) return
+  
+  try {
+    const response = await fetch(`${SERVER_URL}/api/daily/completed/${dailyWordLength.value}/${encodeURIComponent(player1Name.value)}`)
+    const data = await response.json()
+    dailyCompleted.value = data.completed
+  } catch (error) {
+    console.error('Error checking completion:', error)
+    dailyCompleted.value = false
+  }
+}
+
+async function handleStartDaily() {
+  if (!player1Name.value) {
+    alert('Vul je naam in')
+    return
+  }
+  
+  dailyLoading.value = true
+  
+  try {
+    // Check if already completed
+    await checkDailyCompleted()
+    if (dailyCompleted.value) {
+      dailyLoading.value = false
+      return
+    }
+    
+    // Mark as started to prevent replays
+    const startResponse = await fetch(`${SERVER_URL}/api/daily/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        playerName: player1Name.value,
+        wordLength: dailyWordLength.value
+      })
+    })
+    
+    if (!startResponse.ok) {
+      alert('Je hebt deze uitdaging vandaag al gespeeld')
+      dailyLoading.value = false
+      await checkDailyCompleted()
+      return
+    }
+    
+    // Fetch daily words
+    const response = await fetch(`${SERVER_URL}/api/daily/words/${dailyWordLength.value}`)
+    const data = await response.json()
+    
+    if (!data.words || data.words.length === 0) {
+      alert('Geen woorden beschikbaar voor deze lengte')
+      dailyLoading.value = false
+      return
+    }
+    
+    const settings = {
+      player1Name: player1Name.value,
+      player2Name: 'Computer',
+      wordLength: dailyWordLength.value,
+      showHintLetters: false,
+      playIntroTune: false,
+      isDailyMode: true,
+      dailyWords: data.words,
+      timerEnabled: true
+    }
+    
+    // Set up callback for when challenge completes
+    window.dailyChallenge = {
+      onComplete: async (score, wordsGuessed) => {
+        try {
+          const response = await fetch(`${SERVER_URL}/api/daily/submit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              playerName: player1Name.value,
+              wordLength: dailyWordLength.value,
+              score,
+              wordsGuessed
+            })
+          })
+          
+          const data = await response.json()
+          
+          if (!response.ok) {
+            console.error('Error submitting score:', data.error)
+          } else {
+            console.log('Score submitted successfully!')
+            // Reload leaderboard to show updated scores
+            await loadDailyLeaderboard()
+          }
+        } catch (error) {
+          console.error('Error submitting score:', error)
+        }
+      }
+    }
+    
+    cleanup()
+    emit('start', settings)
+    emit('close')
+  } catch (error) {
+    console.error('Error starting daily challenge:', error)
+    alert('Fout bij het starten van de dagelijkse uitdaging')
+  } finally {
+    dailyLoading.value = false
+  }
+}
+
+// Watch for changes to player name to check completion
+watch(player1Name, () => {
+  if (activeTab.value === 'daily') {
+    checkDailyCompleted()
+  }
+})
+
+// Watch for word length changes to update leaderboard and completion
+watch(dailyWordLength, () => {
+  if (activeTab.value === 'daily') {
+    loadDailyLeaderboard()
+    checkDailyCompleted()
+  }
+})
+
+// Watch for tab changes to daily
+watch(activeTab, (newTab) => {
+  if (newTab === 'daily') {
+    loadDailyLeaderboard()
+    checkDailyCompleted()
+  }
+})
 
 onUnmounted(() => {
   cleanup()
@@ -716,5 +938,110 @@ onUnmounted(() => {
 .coming-soon .description {
   color: #888;
   font-size: 0.9rem;
+}
+
+.daily-completed {
+  background: #2d4d2d;
+  border: 2px solid #4d8d4d;
+  border-radius: 5px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.daily-completed p {
+  color: #6ddd6d;
+  margin: 0;
+  font-weight: 600;
+}
+
+.daily-completed .hint {
+  color: #8dfd8d;
+  margin-top: 0.5rem;
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+
+.daily-info {
+  background: #2d2d44;
+  border-radius: 5px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.daily-info p {
+  color: #ccc;
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+}
+
+.daily-info .hint {
+  color: #888;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.leaderboard {
+  background: #2d2d44;
+  border-radius: 5px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.leaderboard h3 {
+  color: #ffd700;
+  text-align: center;
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+}
+
+.no-scores {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  padding: 1rem;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.leaderboard-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: #1a1a2e;
+  border-radius: 3px;
+}
+
+.leaderboard-entry .rank {
+  color: #ffd700;
+  font-weight: bold;
+  min-width: 2rem;
+}
+
+.leaderboard-entry .name {
+  color: #fff;
+  flex: 1;
+  font-weight: 500;
+}
+
+.leaderboard-entry .score {
+  color: #6ddd6d;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 </style>

@@ -26,13 +26,20 @@ import { computed } from 'vue'
 const props = defineProps({
   timeRemaining: Number,
   isActive: Boolean,
-  maxDuration: Number
+  maxDuration: Number,
+  useMinuteFormat: Boolean  // Whether to display as m:ss format
 })
 
 const circumference = 2 * Math.PI * 45
 
 // Add 1 to display so it shows 15-1 instead of 14-0 (or 20-1, 25-1, etc.)
+// In minute format, show actual time without adding 1
 const displayTime = computed(() => {
+  if (props.useMinuteFormat) {
+    const minutes = Math.floor(props.timeRemaining / 60)
+    const seconds = props.timeRemaining % 60
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
   return props.timeRemaining + 1
 })
 

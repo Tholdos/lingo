@@ -5,8 +5,8 @@
       
       <!-- Show buttons only if not multiplayer or if host -->
       <div v-if="!isMultiplayer || isHost" class="button-group">
-        <button @click="handleNewWord" @touchend.prevent="handleNewWord" class="btn btn-primary" title="Druk op Enter">Nieuw woord</button>
-        <button @click="handleNewGame" @touchend.prevent="handleNewGame" class="btn btn-secondary">Nieuw spel</button>
+        <button v-if="!hideNewWord" @click="handleNewWord" @touchend.prevent="handleNewWord" class="btn btn-primary" title="Druk op Enter">Nieuw woord</button>
+        <button @click="handleNewGame" @touchend.prevent="handleNewGame" :class="hideNewWord ? 'btn btn-primary' : 'btn btn-secondary'">Nieuw spel</button>
       </div>
       
       <!-- Show waiting message for non-host in multiplayer -->
@@ -25,7 +25,8 @@ const props = defineProps({
   message: String,
   isMultiplayer: Boolean,
   isHost: Boolean,
-  hostName: String
+  hostName: String,
+  hideNewWord: Boolean  // Hide "New word" button (e.g., for daily completion)
 })
 
 const emit = defineEmits(['close', 'newWord', 'newGame'])
@@ -42,7 +43,12 @@ function handleKeyDown(event) {
   // Only handle Enter when overlay is visible
   if (props.show && event.key === 'Enter') {
     event.preventDefault()
-    handleNewWord()
+    // If "New word" is hidden (daily complete), Enter should trigger "New game"
+    if (props.hideNewWord) {
+      handleNewGame()
+    } else {
+      handleNewWord()
+    }
   }
 }
 

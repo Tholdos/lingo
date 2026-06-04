@@ -2,6 +2,8 @@
   <div id="app">
     <StartupDialog 
       v-if="showStartup"
+      :initial-tab="initialTab"
+      :initial-word-length="initialWordLength"
       @close="showStartup = false"
       @start="handleStart"
       @create-room="handleCreateRoom"
@@ -38,6 +40,7 @@
       :is-multiplayer="gameStore.isMultiplayer"
       :is-host="gameStore.isHost"
       :host-name="gameStore.player1.name"
+      :hide-new-word="gameStore.isDailyComplete"
       @close="gameStore.closeOverlay()"
       @new-word="handleNewWord"
       @new-game="handleNewGame"
@@ -88,6 +91,8 @@ const duplicateWord = ref(false)
 const wrongFirstLetter = ref(false)
 const pendingGameSettings = ref(null)
 const copyButtonText = ref('Kopieer code')
+const initialTab = ref('solo')  // Default to solo tab
+const initialWordLength = ref(6)  // Default word length for daily mode
 let dialogJustOpened = false
 
 // Display invalid word with IJ normalization
@@ -255,6 +260,13 @@ function handleNewWord() {
 function handleNewGame() {
   gameStore.closeOverlay()
   gameStore.resetMultiplayer()
+  
+  // Set initial tab based on last game mode
+  initialTab.value = gameStore.lastGameMode
+  if (gameStore.lastGameMode === 'daily') {
+    initialWordLength.value = gameStore.lastWordLength
+  }
+  
   showStartup.value = true
 }
 

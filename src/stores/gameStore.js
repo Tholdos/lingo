@@ -52,6 +52,18 @@ export const useGameStore = defineStore('game', () => {
   const timerEnabled = ref(true)  // Whether timer is enabled in solo mode
   const soloGuessCount = ref(0)  // Track number of guesses in solo mode (max 5)
   
+  // Daily challenge mode
+  const isDailyMode = ref(false)
+  const dailyWordsRemaining = ref([])
+  const dailyWordsGuessed = ref(0)
+  const dailyTimeLimit = ref(300)  // 5 minutes in seconds
+  const dailyStartTime = ref(null)
+  const isDailyComplete = ref(false)  // Track if daily challenge is finished
+  
+  // Game mode tracking for return navigation
+  const lastGameMode = ref('local')  // 'local', 'solo', 'daily', 'multiplayer'
+  const lastWordLength = ref(6)  // Remember word length for daily mode
+  
   // Multiplayer
   const socket = ref(null)
   const roomId = ref(null)
@@ -156,10 +168,19 @@ export const useGameStore = defineStore('game', () => {
   function startNewWord() {
     if (wordList.value.length === 0) return
     
-    const filteredWords = wordList.value.filter(w => w.length === wordLength.value)
-    if (filteredWords.length === 0) return
-    
-    targetWord.value = filteredWords[Math.floor(Math.random() * filteredWords.length)]
+    // In daily mode, pick from the daily words list
+    if (isDailyMode.value) {
+      if (dailyWordsRemaining.value.length === 0) {
+        // No more words, end the challenge
+        endDailyChallenge()
+        return
+      }
+      targetWord.value = dailyWordsRemaining.value.shift()
+    } else {
+      const filteredWords = wordList.value.filter(w => w.length === wordLength.value)
+      if (filteredWords.length === 0) return
+      targetWord.value = filteredWords[Math.floor(Math.random() * filteredWords.length)]
+    }
     
     currentRow.value = 0
     currentColumn.value = 0  // Start at position 0
@@ -180,7 +201,11 @@ export const useGameStore = defineStore('game', () => {
     // Keep currentColumn at 0 - player must overwrite the hint
     
     showGrid.value = true
-    startTimer()
+    
+    // In daily mode, don't start the word timer (only the overall 5-minute timer runs)
+    if (!isDailyMode.value) {
+      startTimer()
+    }
 
     if (isMultiplayer.value && isHost.value) {
       emitGameState()
@@ -200,9 +225,32 @@ export const useGameStore = defineStore('game', () => {
     wordLength.value = settings.wordLength
     showHintLetters.value = settings.showHintLetters
     
+    // Track game mode and word length
+    if (settings.isDailyMode) {
+      lastGameMode.value = 'daily'
+      lastWordLength.value = settings.wordLength
+    } else if (settings.isSoloMode) {
+      lastGameMode.value = 'solo'
+    } else if (isMultiplayer.value) {
+      lastGameMode.value = 'multiplayer'
+    } else {
+      lastGameMode.value = 'local'
+    }
+    
     // Solo mode settings
     isSoloMode.value = settings.isSoloMode || false
     timerEnabled.value = settings.timerEnabled !== undefined ? settings.timerEnabled : true
+    
+    // Daily mode settings
+    isDailyMode.value = settings.isDailyMode || false
+    isDailyComplete.value = false
+    if (isDailyMode.value) {
+      dailyWordsRemaining.value = [...(settings.dailyWords || [])]
+      dailyWordsGuessed.value = 0
+      dailyStartTime.value = Date.now()
+      // Start the 5-minute countdown timer
+      startDailyTimer()
+    }
     
     // Apply custom timer duration if provided, otherwise use defaults
     if (settings.timerDuration !== undefined) {
@@ -223,10 +271,10 @@ export const useGameStore = defineStore('game', () => {
     showGrid.value = false
     
     // Play intro tune only if:
-    // 1. Not in multiplayer mode and not solo mode
+    // 1. Not in multiplayer mode, not solo mode, and not daily mode
     // 2. Sound is enabled
     // 3. User has enabled playIntroTune
-    const shouldPlayIntro = !isMultiplayer.value && !isSoloMode.value && soundEnabled.value && settings.playIntroTune
+    const shouldPlayIntro = !isMultiplayer.value && !isSoloMode.value && !isDailyMode.value && soundEnabled.value && settings.playIntroTune
     
     if (shouldPlayIntro) {
       playIntroTune()
@@ -349,6 +397,12 @@ export const useGameStore = defineStore('game', () => {
     
     // Check if word starts with the correct first letter (which is always revealed)
     if (!bypassDictionaryCheck && guess[0] !== targetWord.value[0]) {
+      // In daily mode, auto-reject without dialog
+      if (isDailyMode.value) {
+        await markWordIncorrect()
+        isProcessingGuess.value = false
+        return 'incorrect'
+      }
       invalidWordData.value = { word: guess, type: 'wrongFirstLetter' }
       if (isMultiplayer.value) {
         emitGameState()
@@ -359,6 +413,12 @@ export const useGameStore = defineStore('game', () => {
     
     // Check if word has already been guessed in this round (unless bypassing)
     if (!bypassDictionaryCheck && guessedWords.value.has(guess)) {
+      // In daily mode, auto-reject without dialog
+      if (isDailyMode.value) {
+        await markWordIncorrect()
+        isProcessingGuess.value = false
+        return 'incorrect'
+      }
       invalidWordData.value = { word: guess, type: 'duplicate' }
       if (isMultiplayer.value) {
         emitGameState()
@@ -369,6 +429,12 @@ export const useGameStore = defineStore('game', () => {
     
     // Check if word exists in dictionary (unless bypassed)
     if (!bypassDictionaryCheck && !checkWordList.value.includes(guess)) {
+      // In daily mode, auto-reject without dialog
+      if (isDailyMode.value) {
+        await markWordIncorrect()
+        isProcessingGuess.value = false
+        return 'incorrect'
+      }
       invalidWordData.value = { word: guess, type: 'invalid' }
       if (isMultiplayer.value) {
         emitGameState()
@@ -383,7 +449,10 @@ export const useGameStore = defineStore('game', () => {
     // Add to guessed words only after validation passes or is bypassed
     guessedWords.value.add(guess)
     
-    stopTimer()
+    // Don't stop the daily timer on each guess
+    if (!isDailyMode.value) {
+      stopTimer()
+    }
     
     // Determine final states for all letters first
     const targetLetters = targetWord.value.split('')
@@ -436,8 +505,10 @@ export const useGameStore = defineStore('game', () => {
     
     // Check if won
     if (isWinningGuess) {
-      // Stop the timer immediately (already stopped above, but ensure it's stopped)
-      stopTimer()
+      // Stop the timer immediately (but not in daily mode where the 5-minute timer keeps running)
+      if (!isDailyMode.value) {
+        stopTimer()
+      }
       
       // Enable victory mode for animations
       isVictoryMode.value = true
@@ -447,6 +518,23 @@ export const useGameStore = defineStore('game', () => {
         player1.value.score += 50
       } else {
         player2.value.score += 50
+      }
+      
+      // In daily mode, increment words guessed and continue to next word
+      if (isDailyMode.value) {
+        dailyWordsGuessed.value++
+        
+        // Play victory tune
+        playVictoryTune()
+        
+        // Wait for animations then start next word
+        setTimeout(() => {
+          isVictoryMode.value = false
+          startNewWord()
+        }, 1500)
+        
+        isProcessingGuess.value = false
+        return 'won'
       }
       
       // In solo mode, always show player 1's name
@@ -489,7 +577,9 @@ export const useGameStore = defineStore('game', () => {
         currentRow.value++
         currentColumn.value = 0
         copyHintsToNextRow()
-        startTimer()
+        if (!isDailyMode.value) {
+          startTimer()
+        }
         
         isProcessingGuess.value = false
         return 'continue'
@@ -514,7 +604,9 @@ export const useGameStore = defineStore('game', () => {
       currentRow.value++
       currentColumn.value = 0
       copyHintsToNextRow()
-      startTimer()
+      if (!isDailyMode.value) {
+        startTimer()
+      }
       
       isProcessingGuess.value = false
       
@@ -721,6 +813,47 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  let dailyTimerInterval = null
+
+  function startDailyTimer() {
+    if (dailyTimerInterval) clearInterval(dailyTimerInterval)
+    
+    isTimerActive.value = true
+    timeRemaining.value = dailyTimeLimit.value
+    
+    dailyTimerInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - dailyStartTime.value) / 1000)
+      timeRemaining.value = Math.max(0, dailyTimeLimit.value - elapsed)
+      
+      if (timeRemaining.value <= 0) {
+        clearInterval(dailyTimerInterval)
+        dailyTimerInterval = null
+        endDailyChallenge()
+      }
+    }, 1000)
+  }
+
+  function endDailyChallenge() {
+    stopTimer()
+    if (dailyTimerInterval) {
+      clearInterval(dailyTimerInterval)
+      dailyTimerInterval = null
+    }
+    isTimerActive.value = false
+    isDailyComplete.value = true
+    
+    const score = player1.value.score
+    const wordsGuessed = dailyWordsGuessed.value
+    
+    overlayMessage.value = `Tijd voorbij! Score: ${score} (${wordsGuessed} woorden geraden)`
+    showOverlay.value = true
+    
+    // Emit completion event with score
+    if (window.dailyChallenge) {
+      window.dailyChallenge.onComplete(score, wordsGuessed)
+    }
+  }
+
   function closeOverlay() {
     showOverlay.value = false
     
@@ -813,6 +946,32 @@ export const useGameStore = defineStore('game', () => {
     // Emit game state for multiplayer
     if (isMultiplayer.value) {
       emitGameState()
+    }
+  }
+
+  async function markWordIncorrect() {
+    // Mark all letters in current row as incorrect
+    const row = cells.value[currentRow.value]
+    for (let i = 0; i < wordLength.value; i++) {
+      row[i].state = LetterState.Incorrect
+      playLetterSound(LetterState.Incorrect)
+      await sleep(100)
+    }
+    
+    // Wait a bit, then move to next row
+    await sleep(500)
+    
+    // Check if we have more rows available
+    if (currentRow.value < 4) {
+      currentRow.value++
+      currentColumn.value = 0
+      copyHintsToNextRow()
+    } else {
+      // Out of rows, move to next word in daily mode
+      if (isDailyMode.value) {
+        await sleep(500)
+        startNewWord()
+      }
     }
   }
 
@@ -1641,6 +1800,13 @@ export const useGameStore = defineStore('game', () => {
     isSoloMode,
     timerEnabled,
     soloGuessCount,
+    isDailyMode,
+    dailyWordsRemaining,
+    dailyWordsGuessed,
+    dailyTimeLimit,
+    isDailyComplete,
+    lastGameMode,
+    lastWordLength,
     
     // Computed
     currentGuess,

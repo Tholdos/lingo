@@ -1,0 +1,23 @@
+{
+  "leaderboards": {
+    "2026-06-04-5": [
+      {
+        "playerName": "Henk",
+        "score": 100,
+        "wordsGuessed": 2,
+        "timestamp": "2026-06-04T08:19:55.377Z"
+      }
+    ]
+  },
+  "completedPlayers": {
+    "2026-06-04-6-François": true,
+    "2026-06-04-7-François": true,
+    "2026-06-04-5-François": true,
+    "2026-06-04-8-François": true,
+    "2026-06-04-8-Henk": true,
+    "2026-06-04-5-Henk": true
+  },
+  "startedPlayers": {
+    "2026-06-04-5-Henk": true
+  }
+}
