@@ -57,7 +57,7 @@ export const useGameStore = defineStore('game', () => {
   const dailyWordsRemaining = ref([])
   const dailyWordsGuessed = ref(0)
   const dailyGuessCount = ref(0)  // Track number of guesses per word in daily mode (max 5, includes invalid)
-  const dailyTimeLimit = ref(300)  // 5 minutes in seconds
+  const dailyTimeLimit = ref(120)  // 2 minutes in seconds
   const dailyStartTime = ref(null)
   const isDailyComplete = ref(false)  // Track if daily challenge is finished
   
@@ -204,7 +204,7 @@ export const useGameStore = defineStore('game', () => {
     
     showGrid.value = true
     
-    // In daily mode, don't start the word timer (only the overall 5-minute timer runs)
+    // In daily mode, don't start the word timer (only the overall 2-minute timer runs)
     if (!isDailyMode.value) {
       startTimer()
     }
@@ -250,7 +250,7 @@ export const useGameStore = defineStore('game', () => {
       dailyWordsRemaining.value = [...(settings.dailyWords || [])]
       dailyWordsGuessed.value = 0
       dailyStartTime.value = Date.now()
-      // Start the 5-minute countdown timer
+      // Start the 2-minute countdown timer
       startDailyTimer()
     }
     
@@ -513,7 +513,7 @@ export const useGameStore = defineStore('game', () => {
     
     // Check if won
     if (isWinningGuess) {
-      // Stop the timer immediately (but not in daily mode where the 5-minute timer keeps running)
+      // Stop the timer immediately (but not in daily mode where the 2-minute timer keeps running)
       if (!isDailyMode.value) {
         stopTimer()
       }
@@ -601,8 +601,7 @@ export const useGameStore = defineStore('game', () => {
         // Max guesses reached in daily mode, reveal word and move to next
         await revealWord()
         
-        // Wait a moment to show the answer, then start next word
-        await sleep(2000)
+        // Start next word immediately (delays are built into revealWord)
         startNewWord()
         
         isProcessingGuess.value = false
@@ -944,6 +943,13 @@ export const useGameStore = defineStore('game', () => {
   async function retryAfterTimeout() {
     stopTimer()
     
+    // In solo mode, treat timeout as an invalid guess
+    if (isSoloMode.value) {
+      soloGuessCount.value++
+      await markWordIncorrect()
+      return
+    }
+    
     // Check if we've already had 2 turn switches
     if (turnSwitchCount.value >= 2) {
       // Reveal word instead of switching again
@@ -1013,7 +1019,6 @@ export const useGameStore = defineStore('game', () => {
       if (dailyGuessCount.value >= 5) {
         // Max guesses reached, reveal word and move to next
         await revealWord()
-        await sleep(2000)
         startNewWord()
       } else {
         // Continue to next row
@@ -1115,7 +1120,9 @@ export const useGameStore = defineStore('game', () => {
     }
     
     // Wait a bit then show message (no victory tune)
-    await sleep(1000)
+    // Use shorter delay for solo/daily mode to continue faster
+    const postRevealDelay = (isSoloMode.value || isDailyMode.value) ? 300 : 1000
+    await sleep(postRevealDelay)
     
     // Set active player back to round start player for next word
     activePlayer.value = roundStartPlayer.value

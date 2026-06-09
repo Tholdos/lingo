@@ -287,7 +287,7 @@
         </div>
 
         <div class="daily-info">
-          <p>Raad zo veel mogelijk woorden in 5 minuten</p>
+          <p>Raad zo veel mogelijk woorden in 2 minuten</p>
           <p class="hint">Elke woordlengte kan één keer per dag gespeeld worden</p>
         </div>
 
