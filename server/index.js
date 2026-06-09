@@ -277,6 +277,12 @@ app.get('/api/daily/leaderboard/:wordLength', (req, res) => {
   })
 })
 
+// Get all daily data (for admin/debugging)
+app.get('/api/daily/data', (req, res) => {
+  const dailyData = loadDailyData()
+  res.json(dailyData)
+})
+
 const PORT = process.env.PORT || 3000
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
