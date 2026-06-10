@@ -92,7 +92,7 @@ Render will automatically detect the push and redeploy.
 ## Verify It's Working
 
 1. Wait for Render to finish deploying (check the Render dashboard)
-2. Visit: `https://lingo-server-oybx.onrender.com/api/daily/data`
+2. Visit: `https://lingo-server.onrender.com/api/daily/data`
 3. You should see JSON data (might be empty initially)
 4. Play the daily challenge on your site
 5. Visit the endpoint again - you should see your data saved!
