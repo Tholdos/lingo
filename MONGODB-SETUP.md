@@ -53,10 +53,9 @@ Use MongoDB Atlas (free tier) to persist daily challenge data.
    ```
 7. **IMPORTANT:** Replace `<username>` with your database username and `<password>` with the password you copied earlier
 
-Example format (replace all placeholder values):
-```
-mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/?retryWrites=true&w=majority
-```
+The final format will be: `mongodb+srv://[your-db-username]:[your-db-password]@[your-cluster-id].mongodb.net/?retryWrites=true&w=majority`
+
+Replace the parts in square brackets with your actual values from MongoDB Atlas.
 
 ---
 
