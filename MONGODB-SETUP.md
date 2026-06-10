@@ -53,9 +53,9 @@ Use MongoDB Atlas (free tier) to persist daily challenge data.
    ```
 7. **IMPORTANT:** Replace `<username>` with your database username and `<password>` with the password you copied earlier
 
-Example final connection string:
+Example format (replace all placeholder values):
 ```
-mongodb+srv://lingo_admin:YourSecurePassword123@cluster0.ab1cd.mongodb.net/?retryWrites=true&w=majority
+mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/?retryWrites=true&w=majority
 ```
 
 ---
