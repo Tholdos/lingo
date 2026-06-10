@@ -60,6 +60,7 @@ export const useGameStore = defineStore('game', () => {
   const dailyTimeLimit = ref(120)  // 2 minutes in seconds
   const dailyStartTime = ref(null)
   const isDailyComplete = ref(false)  // Track if daily challenge is finished
+  const pendingDailyEnd = ref(false)  // Track if timer ended and we're waiting for guess to complete
   
   // Game mode tracking for return navigation
   const lastGameMode = ref('local')  // 'local', 'solo', 'daily', 'multiplayer'
@@ -169,11 +170,17 @@ export const useGameStore = defineStore('game', () => {
   function startNewWord() {
     if (wordList.value.length === 0) return
     
+    // In daily mode, check if we should end instead of starting new word
+    if (isDailyMode.value && pendingDailyEnd.value) {
+      endDailyChallenge(false)  // Don't reveal, word was already processed
+      return
+    }
+    
     // In daily mode, pick from the daily words list
     if (isDailyMode.value) {
       if (dailyWordsRemaining.value.length === 0) {
         // No more words, end the challenge
-        endDailyChallenge()
+        endDailyChallenge(false)
         return
       }
       targetWord.value = dailyWordsRemaining.value.shift()
@@ -404,6 +411,12 @@ export const useGameStore = defineStore('game', () => {
         dailyGuessCount.value++
         await markWordIncorrect()
         isProcessingGuess.value = false
+        
+        // Check if timer ended while processing
+        if (pendingDailyEnd.value) {
+          endDailyChallenge(true)  // Reveal word since it wasn't guessed
+        }
+        
         return 'incorrect'
       }
       // In solo mode and multiplayer: show dialog to allow contesting
@@ -422,6 +435,12 @@ export const useGameStore = defineStore('game', () => {
         dailyGuessCount.value++
         await markWordIncorrect()
         isProcessingGuess.value = false
+        
+        // Check if timer ended while processing
+        if (pendingDailyEnd.value) {
+          endDailyChallenge(true)  // Reveal word since it wasn't guessed
+        }
+        
         return 'incorrect'
       }
       // In solo mode and multiplayer: show dialog to allow contesting
@@ -440,6 +459,12 @@ export const useGameStore = defineStore('game', () => {
         dailyGuessCount.value++
         await markWordIncorrect()
         isProcessingGuess.value = false
+        
+        // Check if timer ended while processing
+        if (pendingDailyEnd.value) {
+          endDailyChallenge(true)  // Reveal word since it wasn't guessed
+        }
+        
         return 'incorrect'
       }
       // In solo mode and multiplayer: show dialog to allow contesting
@@ -535,10 +560,16 @@ export const useGameStore = defineStore('game', () => {
         // Play victory tune
         playVictoryTune()
         
-        // Wait for animations then start next word
+        // Wait for animations then start next word or end if timer expired
         setTimeout(() => {
           isVictoryMode.value = false
-          startNewWord()
+          
+          // Check if timer ended while processing this guess
+          if (pendingDailyEnd.value) {
+            endDailyChallenge(false)  // Don't reveal, word was guessed
+          } else {
+            startNewWord()
+          }
         }, 1500)
         
         isProcessingGuess.value = false
@@ -613,6 +644,12 @@ export const useGameStore = defineStore('game', () => {
         copyHintsToNextRow()
         
         isProcessingGuess.value = false
+        
+        // Check if timer ended while processing this guess
+        if (pendingDailyEnd.value) {
+          endDailyChallenge(true)  // Reveal word since it wasn't guessed
+        }
+        
         return 'continue'
       }
     }
@@ -859,12 +896,33 @@ export const useGameStore = defineStore('game', () => {
       if (timeRemaining.value <= 0) {
         clearInterval(dailyTimerInterval)
         dailyTimerInterval = null
-        endDailyChallenge()
+        handleDailyTimerEnd()
       }
     }, 1000)
   }
 
-  function endDailyChallenge() {
+  function handleDailyTimerEnd() {
+    // If a guess is currently being processed, wait for it to complete
+    if (isProcessingGuess.value) {
+      pendingDailyEnd.value = true
+      return
+    }
+    
+    // Check if all letters are filled (treat as submitted guess)
+    const row = cells.value[currentRow.value]
+    const allFilled = row.every(cell => cell.letter !== '')
+    
+    if (allFilled && currentGuess.value.length === wordLength.value) {
+      // Submit the guess, then end
+      pendingDailyEnd.value = true
+      submitGuess()
+    } else {
+      // End immediately and reveal the current word
+      endDailyChallenge(true)
+    }
+  }
+
+  async function endDailyChallenge(revealCurrentWord = false) {
     stopTimer()
     if (dailyTimerInterval) {
       clearInterval(dailyTimerInterval)
@@ -872,9 +930,15 @@ export const useGameStore = defineStore('game', () => {
     }
     isTimerActive.value = false
     isDailyComplete.value = true
+    pendingDailyEnd.value = false
     
     const score = player1.value.score
     const wordsGuessed = dailyWordsGuessed.value
+    
+    // Reveal word if requested and word exists
+    if (revealCurrentWord && targetWord.value) {
+      await revealWord()
+    }
     
     const wordText = wordsGuessed === 1 ? 'woord' : 'woorden'
     overlayMessage.value = `Tijd voorbij! Score: ${score} (${wordsGuessed} ${wordText} geraden)`
