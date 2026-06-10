@@ -4,12 +4,40 @@ const { Server } = require('socket.io')
 const cors = require('cors')
 const fs = require('fs')
 const path = require('path')
+const { MongoClient } = require('mongodb')
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 
 const server = http.createServer(app)
+
+// MongoDB setup
+const MONGODB_URI = process.env.MONGODB_URI
+let db = null
+let dailyCollection = null
+
+async function connectDB() {
+  if (!MONGODB_URI) {
+    console.log('No MONGODB_URI found, using file-based storage')
+    return false
+  }
+  
+  try {
+    const client = new MongoClient(MONGODB_URI)
+    await client.connect()
+    db = client.db('lingo')
+    dailyCollection = db.collection('daily_data')
+    console.log('Connected to MongoDB')
+    return true
+  } catch (error) {
+    console.error('MongoDB connection error:', error)
+    return false
+  }
+}
+
+// Initialize DB connection
+connectDB()
 
 // Allowed origins for CORS
 const allowedOrigins = [
@@ -112,25 +140,49 @@ function getCETDateString() {
   return cetTime.toISOString().split('T')[0]
 }
 
-// Load or initialize daily data
-function loadDailyData() {
+// Load or initialize daily data (MongoDB or file-based)
+async function loadDailyData() {
+  if (dailyCollection) {
+    try {
+      const data = await dailyCollection.findOne({ _id: 'daily_data' })
+      return data || { leaderboards: {}, completedPlayers: {}, startedPlayers: {} }
+    } catch (error) {
+      console.error('Error loading from MongoDB:', error)
+    }
+  }
+  
+  // Fall back to file-based storage
   try {
     if (fs.existsSync(DAILY_DATA_FILE)) {
       const data = JSON.parse(fs.readFileSync(DAILY_DATA_FILE, 'utf8'))
       return data
     }
   } catch (error) {
-    console.error('Error loading daily data:', error)
+    console.error('Error loading daily data from file:', error)
   }
   return { leaderboards: {}, completedPlayers: {}, startedPlayers: {} }
 }
 
-// Save daily data
-function saveDailyData(data) {
+// Save daily data (MongoDB or file-based)
+async function saveDailyData(data) {
+  if (dailyCollection) {
+    try {
+      await dailyCollection.updateOne(
+        { _id: 'daily_data' },
+        { $set: data },
+        { upsert: true }
+      )
+      return
+    } catch (error) {
+      console.error('Error saving to MongoDB:', error)
+    }
+  }
+  
+  // Fall back to file-based storage
   try {
     fs.writeFileSync(DAILY_DATA_FILE, JSON.stringify(data, null, 2))
   } catch (error) {
-    console.error('Error saving daily data:', error)
+    console.error('Error saving daily data to file:', error)
   }
 }
 
@@ -189,10 +241,10 @@ app.get('/api/daily/words/:wordLength', (req, res) => {
 })
 
 // API endpoint to check if player has completed/started today's challenge
-app.get('/api/daily/completed/:wordLength/:playerName', (req, res) => {
+app.get('/api/daily/completed/:wordLength/:playerName', async (req, res) => {
   const { wordLength, playerName } = req.params
   const dateString = getCETDateString()
-  const dailyData = loadDailyData()
+  const dailyData = await loadDailyData()
   
   const key = `${dateString}-${wordLength}-${playerName}`
   // Check both started and completed to prevent replays
@@ -203,10 +255,10 @@ app.get('/api/daily/completed/:wordLength/:playerName', (req, res) => {
 })
 
 // API endpoint to mark player as started (to prevent replays even on abort)
-app.post('/api/daily/start', (req, res) => {
+app.post('/api/daily/start', async (req, res) => {
   const { playerName, wordLength } = req.body
   const dateString = getCETDateString()
-  const dailyData = loadDailyData()
+  const dailyData = await loadDailyData()
   
   const key = `${dateString}-${wordLength}-${playerName}`
   
@@ -218,16 +270,16 @@ app.post('/api/daily/start', (req, res) => {
   // Mark as started
   if (!dailyData.startedPlayers) dailyData.startedPlayers = {}
   dailyData.startedPlayers[key] = true
-  saveDailyData(dailyData)
+  await saveDailyData(dailyData)
   
   res.json({ success: true })
 })
 
 // API endpoint to submit score
-app.post('/api/daily/submit', (req, res) => {
+app.post('/api/daily/submit', async (req, res) => {
   const { playerName, wordLength, score, wordsGuessed } = req.body
   const dateString = getCETDateString()
-  const dailyData = loadDailyData()
+  const dailyData = await loadDailyData()
   
   // Check if already submitted a score
   const completionKey = `${dateString}-${wordLength}-${playerName}`
@@ -256,16 +308,16 @@ app.post('/api/daily/submit', (req, res) => {
   dailyData.leaderboards[leaderboardKey].sort((a, b) => b.score - a.score)
   dailyData.leaderboards[leaderboardKey] = dailyData.leaderboards[leaderboardKey].slice(0, 10)
   
-  saveDailyData(dailyData)
+  await saveDailyData(dailyData)
   
   res.json({ success: true })
 })
 
 // API endpoint to get leaderboard
-app.get('/api/daily/leaderboard/:wordLength', (req, res) => {
+app.get('/api/daily/leaderboard/:wordLength', async (req, res) => {
   const wordLength = req.params.wordLength
   const dateString = getCETDateString()
-  const dailyData = loadDailyData()
+  const dailyData = await loadDailyData()
   
   const leaderboardKey = `${dateString}-${wordLength}`
   const leaderboard = dailyData.leaderboards[leaderboardKey] || []
@@ -278,8 +330,8 @@ app.get('/api/daily/leaderboard/:wordLength', (req, res) => {
 })
 
 // Get all daily data (for admin/debugging)
-app.get('/api/daily/data', (req, res) => {
-  const dailyData = loadDailyData()
+app.get('/api/daily/data', async (req, res) => {
+  const dailyData = await loadDailyData()
   res.json(dailyData)
 })
 
