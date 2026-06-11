@@ -205,7 +205,8 @@ function generateDailyWords(dateString, wordLength, wordList) {
       usedIndices.add(index)
       selectedWords.push(filtered[index])
     }
-    currentSeed++
+    // Use large prime multiplier and position to create truly random sequences
+    currentSeed = seed * (selectedWords.length + 1) * 9973 + selectedWords.length
   }
   
   return selectedWords

@@ -932,6 +932,48 @@ export const useGameStore = defineStore('game', () => {
     isDailyComplete.value = true
     pendingDailyEnd.value = false
     
+    // Award partial points for the final word if time ran out
+    if (revealCurrentWord && targetWord.value && currentRow.value < MAX_ATTEMPTS) {
+      const row = cells.value[currentRow.value]
+      const guess = row.map(cell => cell.letter).join('')
+      
+      // Only score if there's at least one filled letter
+      if (guess.trim().length > 0) {
+        const targetLetters = targetWord.value.split('')
+        const guessLetters = guess.split('')
+        const letterCounts = new Map()
+        let partialScore = 0
+        
+        // Count letters in target word
+        targetLetters.forEach(letter => {
+          letterCounts.set(letter, (letterCounts.get(letter) || 0) + 1)
+        })
+        
+        // First pass: award 5 points for correctly positioned letters (skip first letter)
+        for (let i = 1; i < wordLength.value; i++) {
+          if (guessLetters[i] && guessLetters[i] === targetLetters[i]) {
+            partialScore += 5
+            letterCounts.set(guessLetters[i], letterCounts.get(guessLetters[i]) - 1)
+          }
+        }
+        
+        // Second pass: award 2 points for correct letters in wrong position (skip first letter)
+        for (let i = 1; i < wordLength.value; i++) {
+          if (guessLetters[i] && guessLetters[i] !== targetLetters[i]) {
+            if (letterCounts.get(guessLetters[i]) > 0) {
+              partialScore += 2
+              letterCounts.set(guessLetters[i], letterCounts.get(guessLetters[i]) - 1)
+            }
+          }
+        }
+        
+        // Add partial score to player
+        if (partialScore > 0) {
+          player1.value.score += partialScore
+        }
+      }
+    }
+    
     const score = player1.value.score
     const wordsGuessed = dailyWordsGuessed.value
     
