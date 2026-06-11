@@ -935,12 +935,12 @@ export const useGameStore = defineStore('game', () => {
     // Award partial points for the final word if time ran out
     if (revealCurrentWord && targetWord.value && currentRow.value < MAX_ATTEMPTS) {
       const row = cells.value[currentRow.value]
-      const guess = row.map(cell => cell.letter).join('')
+      const guessLetters = row.map(cell => cell.letter)
       
       // Only score if there's at least one filled letter
-      if (guess.trim().length > 0) {
+      const hasFilledLetters = guessLetters.some(letter => letter !== '')
+      if (hasFilledLetters) {
         const targetLetters = targetWord.value.split('')
-        const guessLetters = guess.split('')
         const letterCounts = new Map()
         let partialScore = 0
         
