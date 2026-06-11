@@ -124,6 +124,9 @@ function generateRoomId() {
 // Daily Challenge functionality
 const DAILY_DATA_FILE = path.join(__dirname, 'daily-data.json')
 
+// Seed version - increment this to regenerate words for the same date
+const SEED_VERSION = 2  // Changed from 1 to get new words for today
+
 // Seeded random number generator (for consistent daily words)
 function seededRandom(seed) {
   let x = Math.sin(seed++) * 10000
@@ -188,7 +191,7 @@ async function saveDailyData(data) {
 
 // Generate daily words for a specific date and word length
 function generateDailyWords(dateString, wordLength, wordList) {
-  const seed = parseInt(dateString.replace(/-/g, '')) + wordLength
+  const seed = (parseInt(dateString.replace(/-/g, '')) + wordLength) * SEED_VERSION
   const filtered = wordList.filter(w => w.length === wordLength)
   
   if (filtered.length === 0) return []
@@ -331,9 +334,66 @@ app.get('/api/daily/leaderboard/:wordLength', async (req, res) => {
 })
 
 // Get all daily data (for admin/debugging)
+// API endpoint to get all daily data (for admin/debugging)
 app.get('/api/daily/data', async (req, res) => {
   const dailyData = await loadDailyData()
   res.json(dailyData)
+})
+
+// Admin endpoint to clear today's data
+app.post('/api/daily/clear-today', async (req, res) => {
+  const { adminKey } = req.body
+  
+  // Simple admin key check (you can set this as environment variable)
+  const ADMIN_KEY = process.env.DAILY_ADMIN_KEY || 'lingo-admin-2026'
+  
+  if (adminKey !== ADMIN_KEY) {
+    return res.status(403).json({ error: 'Invalid admin key' })
+  }
+  
+  const dateString = getCETDateString()
+  const dailyData = await loadDailyData()
+  
+  // Clear all entries for today
+  let clearedCount = 0
+  
+  // Clear startedPlayers for today
+  if (dailyData.startedPlayers) {
+    Object.keys(dailyData.startedPlayers).forEach(key => {
+      if (key.startsWith(dateString)) {
+        delete dailyData.startedPlayers[key]
+        clearedCount++
+      }
+    })
+  }
+  
+  // Clear completedPlayers for today
+  if (dailyData.completedPlayers) {
+    Object.keys(dailyData.completedPlayers).forEach(key => {
+      if (key.startsWith(dateString)) {
+        delete dailyData.completedPlayers[key]
+        clearedCount++
+      }
+    })
+  }
+  
+  // Clear leaderboards for today
+  if (dailyData.leaderboards) {
+    Object.keys(dailyData.leaderboards).forEach(key => {
+      if (key.startsWith(dateString)) {
+        delete dailyData.leaderboards[key]
+        clearedCount++
+      }
+    })
+  }
+  
+  await saveDailyData(dailyData)
+  
+  res.json({ 
+    success: true, 
+    message: `Cleared ${clearedCount} entries for ${dateString}`,
+    date: dateString
+  })
 })
 
 const PORT = process.env.PORT || 3000
