@@ -24,6 +24,12 @@
     ],
     "2026-06-11-6": [
       {
+        "playerName": "François3",
+        "score": 59,
+        "wordsGuessed": 1,
+        "timestamp": "2026-06-11T07:49:17.860Z"
+      },
+      {
         "playerName": "François2",
         "score": 55,
         "wordsGuessed": 1,
@@ -40,7 +46,8 @@
     "2026-06-04-5-Henk": true,
     "2026-06-04-6-Thomas": true,
     "2026-06-04-6-Henk": true,
-    "2026-06-11-6-François2": true
+    "2026-06-11-6-François2": true,
+    "2026-06-11-6-François3": true
   },
   "startedPlayers": {
     "2026-06-04-5-Henk": true,
@@ -56,6 +63,7 @@
     "2026-06-09-6-François": true,
     "2026-06-09-5-François": true,
     "2026-06-11-6-François": true,
-    "2026-06-11-6-François2": true
+    "2026-06-11-6-François2": true,
+    "2026-06-11-6-François3": true
   }
 }

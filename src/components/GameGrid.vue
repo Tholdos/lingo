@@ -68,6 +68,25 @@
         </div>
       </div>
       
+      <!-- Emoji reactions for multiplayer -->
+      <div v-if="gameStore.isMultiplayer && gameStore.showGrid" class="emoji-container">
+        <!-- Emoji buttons -->
+        <div class="emoji-buttons">
+          <button @click="sendEmoji('👍')" class="emoji-btn" title="Thumbs up">👍</button>
+          <button @click="sendEmoji('❤️')" class="emoji-btn" title="Heart">❤️</button>
+          <button @click="sendEmoji('😂')" class="emoji-btn" title="Laughing">😂</button>
+          <button @click="sendEmoji('😮')" class="emoji-btn" title="Surprised">😮</button>
+          <button @click="sendEmoji('🎉')" class="emoji-btn" title="Party">🎉</button>
+        </div>
+        
+        <!-- Received emoji display -->
+        <transition name="emoji-pop">
+          <div v-if="gameStore.receivedEmoji" class="received-emoji">
+            {{ gameStore.receivedEmoji }}
+          </div>
+        </transition>
+      </div>
+      
       <div class="status-message" v-if="gameStore.isMultiplayer && !gameStore.isMyTurn()">
         Wacht op {{ gameStore.activePlayerName }}...
       </div>
@@ -102,6 +121,10 @@ function isRowAllIncorrect(rowIndex) {
   if (!row) return false
   // Check if all cells in the row are incorrect
   return row.every(cell => cell.state === 'incorrect' && cell.letter !== '')
+}
+
+function sendEmoji(emoji) {
+  gameStore.sendEmoji(emoji)
 }
 
 function focusMobileInput() {
@@ -461,6 +484,104 @@ onUnmounted(() => {
   caret-color: transparent;
   margin-top: 0.25rem;
   width: 100%;
+}
+
+/* Emoji reactions */
+.emoji-container {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.emoji-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.emoji-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  user-select: none;
+}
+
+.emoji-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.1);
+}
+
+.emoji-btn:active {
+  transform: scale(0.95);
+}
+
+.received-emoji {
+  font-size: 4rem;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  pointer-events: none;
+  text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.emoji-pop-enter-active {
+  animation: emojiPop 0.5s ease-out;
+}
+
+.emoji-pop-leave-active {
+  animation: emojiFade 0.3s ease-in;
+}
+
+@keyframes emojiPop {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes emojiFade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+}
+
+@media (max-width: 768px) {
+  .emoji-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+  
+  .received-emoji {
+    font-size: 3rem;
+  }
 }
 
 @media (max-width: 768px) {

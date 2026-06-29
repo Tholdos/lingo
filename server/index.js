@@ -100,6 +100,15 @@ io.on('connection', (socket) => {
     }
   })
 
+  socket.on('sendEmoji', ({ roomId, emoji }) => {
+    const room = rooms.get(roomId)
+    if (room) {
+      // Send emoji to the other player in the room
+      socket.to(roomId).emit('emojiReceived', emoji)
+      console.log('Emoji sent in room:', roomId, emoji)
+    }
+  })
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id)
     for (const [roomId, room] of rooms.entries()) {

@@ -79,6 +79,12 @@ export const useGameStore = defineStore('game', () => {
   const MAX_RECONNECT_ATTEMPTS = 5
   let rejoinTimeout = null
   let serverUrl = null
+  const targetScore = ref(500) // Target score for multiplayer games
+  const gameWinner = ref(null) // Winner name when target score reached
+  
+  // Emoji reactions
+  const receivedEmoji = ref(null) // Currently displayed emoji from opponent
+  const emojiTimestamp = ref(0) // Timestamp for auto-hiding emoji
 
   // Load sound preference from localStorage
   try {
@@ -233,6 +239,12 @@ export const useGameStore = defineStore('game', () => {
     player2.value.score = 0
     wordLength.value = settings.wordLength
     showHintLetters.value = settings.showHintLetters
+    
+    // Set target score for multiplayer
+    if (isMultiplayer.value && settings.targetScore) {
+      targetScore.value = settings.targetScore
+    }
+    gameWinner.value = null
     
     // Track game mode and word length
     if (settings.isDailyMode) {
@@ -557,6 +569,39 @@ export const useGameStore = defineStore('game', () => {
         player1.value.score += 50
       } else {
         player2.value.score += 50
+      }
+      
+      // Check if target score reached in multiplayer mode
+      if (isMultiplayer.value && targetScore.value > 0) {
+        if (player1.value.score >= targetScore.value) {
+          gameWinner.value = player1.value.name
+          stopTimer()
+          isVictoryMode.value = true
+          overlayMessage.value = `🏆 ${player1.value.name} heeft gewonnen! (${player1.value.score} punten)`
+          playVictoryTune()
+          setTimeout(() => {
+            showOverlay.value = true
+            if (isMultiplayer.value) {
+              emitGameState()
+            }
+          }, 2000)
+          isProcessingGuess.value = false
+          return 'won'
+        } else if (player2.value.score >= targetScore.value) {
+          gameWinner.value = player2.value.name
+          stopTimer()
+          isVictoryMode.value = true
+          overlayMessage.value = `🏆 ${player2.value.name} heeft gewonnen! (${player2.value.score} punten)`
+          playVictoryTune()
+          setTimeout(() => {
+            showOverlay.value = true
+            if (isMultiplayer.value) {
+              emitGameState()
+            }
+          }, 2000)
+          isProcessingGuess.value = false
+          return 'won'
+        }
       }
       
       // In daily mode, increment words guessed and continue to next word
@@ -1780,6 +1825,18 @@ export const useGameStore = defineStore('game', () => {
         alert(message)
       }
     })
+    
+    // Emoji reactions
+    socket.value.on('emojiReceived', (emoji) => {
+      receivedEmoji.value = emoji
+      emojiTimestamp.value = Date.now()
+      // Auto-hide after 3 seconds
+      setTimeout(() => {
+        if (Date.now() - emojiTimestamp.value >= 2900) {
+          receivedEmoji.value = null
+        }
+      }, 3000)
+    })
   }
   
   async function attemptRejoinRoom() {
@@ -1976,6 +2033,15 @@ export const useGameStore = defineStore('game', () => {
     return false
   }
 
+  function sendEmoji(emoji) {
+    if (!isMultiplayer.value || !socket.value || !isConnected.value || !roomId.value) return
+    
+    socket.value.emit('sendEmoji', {
+      roomId: roomId.value,
+      emoji: emoji
+    })
+  }
+
   function resetMultiplayer() {
     isMultiplayer.value = false
     isHost.value = false
@@ -1984,6 +2050,9 @@ export const useGameStore = defineStore('game', () => {
     joinerName.value = null
     isReconnecting.value = false
     reconnectAttempts = 0
+    gameWinner.value = null
+    targetScore.value = 500
+    receivedEmoji.value = null
     // Clear rejoin timeout if it exists
     if (rejoinTimeout) {
       clearTimeout(rejoinTimeout)
@@ -2072,6 +2141,10 @@ export const useGameStore = defineStore('game', () => {
     markWordIncorrect,
     toggleSound,
     emitGameState,
-    reconnectSocket
+    reconnectSocket,
+    sendEmoji,
+    targetScore,
+    gameWinner,
+    receivedEmoji
   }
 })

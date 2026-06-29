@@ -204,6 +204,12 @@
           </div>
 
           <div class="form-group">
+            <label>Doelscore:</label>
+            <input v-model.number="targetScoreMultiplayer" type="number" min="50" max="5000" step="50" class="timer-input" />
+            <span class="hint-text">Eerste speler die deze score behaalt wint</span>
+          </div>
+
+          <div class="form-group">
             <label><input type="checkbox" v-model="showHintLetters" /> Bonusletter weergeven bij beurtverlies</label>
           </div>
 
@@ -362,6 +368,7 @@ const showJoinDialog = ref(false)
 const joinCode = ref('')
 const player1Input = ref(null)
 const player2Input = ref(null)
+const targetScoreMultiplayer = ref(500)  // Target score for multiplayer games
 
 // Daily challenge state
 const dailyWordLength = ref(props.initialWordLength)
@@ -533,7 +540,8 @@ function handleCreateRoom() {
     wordLength: wordLength.value,
     showHintLetters: showHintLetters.value,
     playIntroTune: playIntroTune.value,
-    timerDuration: timerDuration.value
+    timerDuration: timerDuration.value,
+    targetScore: targetScoreMultiplayer.value
   }
   
   // Save settings to localStorage (except timer - it auto-updates based on word length)
@@ -1048,6 +1056,14 @@ onUnmounted(() => {
 .daily-info .hint {
   color: #888;
   font-size: 0.8rem;
+  font-style: italic;
+}
+
+.hint-text {
+  display: block;
+  color: #888;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
   font-style: italic;
 }
 

@@ -41,7 +41,7 @@
       :is-multiplayer="gameStore.isMultiplayer"
       :is-host="gameStore.isHost"
       :host-name="gameStore.player1.name"
-      :hide-new-word="gameStore.isDailyComplete"
+      :hide-new-word="gameStore.isDailyComplete || gameStore.gameWinner !== null"
       @close="gameStore.closeOverlay()"
       @new-word="handleNewWord"
       @new-game="handleNewGame"
