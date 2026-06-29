@@ -1828,6 +1828,7 @@ export const useGameStore = defineStore('game', () => {
     
     // Emoji reactions
     socket.value.on('emojiReceived', (emoji) => {
+      console.log('Emoji received from opponent:', emoji)
       receivedEmoji.value = emoji
       emojiTimestamp.value = Date.now()
       // Auto-hide after 3 seconds
@@ -2035,6 +2036,8 @@ export const useGameStore = defineStore('game', () => {
 
   function sendEmoji(emoji) {
     if (!isMultiplayer.value || !socket.value || !isConnected.value || !roomId.value) return
+    
+    console.log('Sending emoji to opponent:', emoji, 'in room:', roomId.value)
     
     // Send to opponent
     socket.value.emit('sendEmoji', {

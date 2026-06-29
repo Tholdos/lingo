@@ -71,7 +71,7 @@ io.on('connection', (socket) => {
     })
     socket.join(roomId)
     socket.emit('roomCreated', roomId)
-    console.log('Room created:', roomId)
+    console.log('Room created:', roomId, 'by host:', socket.id)
   })
 
   socket.on('joinRoom', (data) => {
@@ -105,7 +105,9 @@ io.on('connection', (socket) => {
     if (room) {
       // Send emoji to the other player in the room
       socket.to(roomId).emit('emojiReceived', emoji)
-      console.log('Emoji sent in room:', roomId, emoji)
+      console.log('Emoji sent in room:', roomId, 'emoji:', emoji, 'from:', socket.id)
+    } else {
+      console.log('Failed to send emoji - room not found:', roomId)
     }
   })
 

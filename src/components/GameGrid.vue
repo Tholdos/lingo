@@ -538,38 +538,38 @@ onUnmounted(() => {
   z-index: 500;
   pointer-events: none;
   text-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
-  opacity: 0.7;
 }
 
 .emoji-pop-enter-active {
-  animation: emojiPop 0.5s ease-out;
+  animation: emojiContinuousFade 3s ease-out;
 }
 
 .emoji-pop-leave-active {
-  animation: emojiFade 0.3s ease-in;
+  animation: emojiFadeOut 0.2s ease-in;
 }
 
-@keyframes emojiPop {
+@keyframes emojiContinuousFade {
   0% {
     transform: translate(-50%, -50%) scale(0);
     opacity: 0;
   }
-  50% {
-    transform: translate(-50%, -50%) scale(1.2);
+  10% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+  }
+  20% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.95;
   }
   100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0;
   }
 }
 
-@keyframes emojiFade {
-  from {
-    opacity: 1;
-  }
+@keyframes emojiFadeOut {
   to {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
   }
 }
 
