@@ -523,35 +523,9 @@ export const useGameStore = defineStore('game', () => {
     // Check if this is a winning guess (before animating)
     const isWinningGuess = guess === targetWord.value
     
-    // Prepare next row BEFORE animation to prevent race condition with quick typing
-    // Store the animation row index before incrementing
-    const animationRow = currentRow.value
-    
-    // If not winning, prepare the next row immediately
-    if (!isWinningGuess) {
-      if (isSoloMode.value) {
-        soloGuessCount.value++
-      } else if (isDailyMode.value) {
-        dailyGuessCount.value++
-      }
-      
-      // Determine if we need to advance to next row or handle turn switch
-      const shouldAdvanceRow = isSoloMode.value ? (soloGuessCount.value < 5) :
-                               isDailyMode.value ? (dailyGuessCount.value < 5) :
-                               (currentRow.value < 4 || (currentRow.value >= 4 && turnSwitchCount.value >= 2))
-      
-      if (shouldAdvanceRow && currentRow.value < 4) {
-        // Advance to next row now (before animation)
-        currentRow.value++
-        currentColumn.value = 0
-        copyHintsToNextRow()
-      }
-    }
-    
-    // Apply states and play sounds with animation delay on the stored row
-    const animRow = cells.value[animationRow]
+    // Apply states and play sounds with animation delay
     for (let i = 0; i < wordLength.value; i++) {
-      animRow[i].state = finalStates[i]
+      row[i].state = finalStates[i]
       playLetterSound(finalStates[i])
       await sleep(250)
       
@@ -560,6 +534,12 @@ export const useGameStore = defineStore('game', () => {
       if (isMultiplayer.value && !isWinningGuess) {
         emitGameState()
       }
+    }
+    
+    // Add small delay after animation to prevent race condition with quick typing
+    // This ensures the animation completes before accepting new input
+    if (!isWinningGuess) {
+      await sleep(100)
     }
     
     // Check if won
@@ -629,15 +609,19 @@ export const useGameStore = defineStore('game', () => {
     
     // Wrong guess - check row and turn switch count to determine action
     // In solo mode and daily mode, check guess count instead
-    // Note: Row advancement already happened before animation for rows 0-3
     if (isSoloMode.value) {
+      soloGuessCount.value++
+      
       if (soloGuessCount.value >= 5) {
         // Max guesses reached in solo mode, reveal word
         await revealWord()
         isProcessingGuess.value = false
         return 'revealed'
       } else {
-        // Already advanced row before animation, just start timer
+        // Continue to next row
+        currentRow.value++
+        currentColumn.value = 0
+        copyHintsToNextRow()
         if (timerEnabled.value) {
           startTimer()
         }
@@ -648,6 +632,8 @@ export const useGameStore = defineStore('game', () => {
     }
     
     if (isDailyMode.value) {
+      dailyGuessCount.value++
+      
       if (dailyGuessCount.value >= 5) {
         // Max guesses reached in daily mode, reveal word and move to next
         await revealWord()
@@ -658,7 +644,11 @@ export const useGameStore = defineStore('game', () => {
         isProcessingGuess.value = false
         return 'revealed'
       } else {
-        // Already advanced row before animation
+        // Continue to next row
+        currentRow.value++
+        currentColumn.value = 0
+        copyHintsToNextRow()
+        
         isProcessingGuess.value = false
         
         // Check if timer ended while processing this guess
@@ -670,7 +660,7 @@ export const useGameStore = defineStore('game', () => {
       }
     }
     
-    if (animationRow >= 4) {
+    if (currentRow.value >= 4) {
       // Row 4+: Wrong word triggers turn switch
       if (turnSwitchCount.value >= 2) {
         // Already had 2 turn switches, reveal word
@@ -686,7 +676,10 @@ export const useGameStore = defineStore('game', () => {
         return 'switched'
       }
     } else {
-      // Rows 0-3: Already advanced to next row before animation
+      // Rows 0-3: Move to next row and continue with same player
+      currentRow.value++
+      currentColumn.value = 0
+      copyHintsToNextRow()
       if (!isDailyMode.value) {
         startTimer()
       }

@@ -599,9 +599,19 @@ async function loadDailyLeaderboard() {
   leaderboardError.value = false
   
   try {
+    // Create manual timeout with AbortController for better browser compatibility
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 8000) // 8 second timeout
+    
     const response = await fetch(`${SERVER_URL}/api/daily/leaderboard/${dailyWordLength.value}`, {
-      signal: AbortSignal.timeout(10000) // 10 second timeout
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+      },
+      mode: 'cors',
     })
+    
+    clearTimeout(timeoutId)
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`)
@@ -614,6 +624,28 @@ async function loadDailyLeaderboard() {
     console.error('Error loading leaderboard:', error)
     dailyLeaderboard.value = []
     leaderboardError.value = true
+    
+    // Auto-retry once after a short delay if it was a timeout/network error
+    if (error.name === 'AbortError' || error.message.includes('fetch')) {
+      setTimeout(async () => {
+        if (leaderboardError.value && activeTab.value === 'daily') {
+          // Silent retry
+          try {
+            const response = await fetch(`${SERVER_URL}/api/daily/leaderboard/${dailyWordLength.value}`, {
+              headers: { 'Accept': 'application/json' },
+              mode: 'cors',
+            })
+            if (response.ok) {
+              const data = await response.json()
+              dailyLeaderboard.value = data.leaderboard || []
+              leaderboardError.value = false
+            }
+          } catch (retryError) {
+            console.error('Retry failed:', retryError)
+          }
+        }
+      }, 2000)
+    }
   } finally {
     leaderboardLoading.value = false
   }
