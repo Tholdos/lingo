@@ -2036,10 +2036,21 @@ export const useGameStore = defineStore('game', () => {
   function sendEmoji(emoji) {
     if (!isMultiplayer.value || !socket.value || !isConnected.value || !roomId.value) return
     
+    // Send to opponent
     socket.value.emit('sendEmoji', {
       roomId: roomId.value,
       emoji: emoji
     })
+    
+    // Also display locally for sender
+    receivedEmoji.value = emoji
+    emojiTimestamp.value = Date.now()
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      if (Date.now() - emojiTimestamp.value >= 2900) {
+        receivedEmoji.value = null
+      }
+    }, 3000)
   }
 
   function resetMultiplayer() {

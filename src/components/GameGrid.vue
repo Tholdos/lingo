@@ -51,7 +51,14 @@
     
     <!-- Game grid with dynamic sizing based on word length -->
     <div v-if="gameStore.showGrid" class="grid-and-status-wrapper scalable">
-      <div class="grid-wrapper">
+      <div class="grid-wrapper" style="position: relative;">
+        <!-- Received emoji display over grid -->
+        <transition name="emoji-pop">
+          <div v-if="gameStore.receivedEmoji" class="received-emoji">
+            {{ gameStore.receivedEmoji }}
+          </div>
+        </transition>
+        
         <div class="game-grid" ref="gameGridRef" :class="['word-length-' + gameStore.wordLength, { 'reveal-animation': gameStore.isAnimatingReveal }]">
           <div v-for="(row, rowIndex) in visibleCells" :key="rowIndex" :class="['row', { 'dimmed-row': isRowAllIncorrect(rowIndex) && (gameStore.isSoloMode || gameStore.isDailyMode) }]">
             <LetterCell 
@@ -78,13 +85,6 @@
           <button @click="sendEmoji('😮')" class="emoji-btn" title="Surprised">😮</button>
           <button @click="sendEmoji('🎉')" class="emoji-btn" title="Party">🎉</button>
         </div>
-        
-        <!-- Received emoji display -->
-        <transition name="emoji-pop">
-          <div v-if="gameStore.receivedEmoji" class="received-emoji">
-            {{ gameStore.receivedEmoji }}
-          </div>
-        </transition>
       </div>
       
       <div class="status-message" v-if="gameStore.isMultiplayer && !gameStore.isMyTurn()">
@@ -530,14 +530,15 @@ onUnmounted(() => {
 }
 
 .received-emoji {
-  font-size: 4rem;
-  position: fixed;
+  font-size: 6rem;
+  position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 1000;
+  z-index: 500;
   pointer-events: none;
-  text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+  opacity: 0.7;
 }
 
 .emoji-pop-enter-active {
@@ -580,7 +581,7 @@ onUnmounted(() => {
   }
   
   .received-emoji {
-    font-size: 3rem;
+    font-size: 4rem;
   }
 }
 
