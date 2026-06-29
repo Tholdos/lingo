@@ -523,9 +523,35 @@ export const useGameStore = defineStore('game', () => {
     // Check if this is a winning guess (before animating)
     const isWinningGuess = guess === targetWord.value
     
-    // Apply states and play sounds with animation delay
+    // Prepare next row BEFORE animation to prevent race condition with quick typing
+    // Store the animation row index before incrementing
+    const animationRow = currentRow.value
+    
+    // If not winning, prepare the next row immediately
+    if (!isWinningGuess) {
+      if (isSoloMode.value) {
+        soloGuessCount.value++
+      } else if (isDailyMode.value) {
+        dailyGuessCount.value++
+      }
+      
+      // Determine if we need to advance to next row or handle turn switch
+      const shouldAdvanceRow = isSoloMode.value ? (soloGuessCount.value < 5) :
+                               isDailyMode.value ? (dailyGuessCount.value < 5) :
+                               (currentRow.value < 4 || (currentRow.value >= 4 && turnSwitchCount.value >= 2))
+      
+      if (shouldAdvanceRow && currentRow.value < 4) {
+        // Advance to next row now (before animation)
+        currentRow.value++
+        currentColumn.value = 0
+        copyHintsToNextRow()
+      }
+    }
+    
+    // Apply states and play sounds with animation delay on the stored row
+    const animRow = cells.value[animationRow]
     for (let i = 0; i < wordLength.value; i++) {
-      row[i].state = finalStates[i]
+      animRow[i].state = finalStates[i]
       playLetterSound(finalStates[i])
       await sleep(250)
       
@@ -603,19 +629,15 @@ export const useGameStore = defineStore('game', () => {
     
     // Wrong guess - check row and turn switch count to determine action
     // In solo mode and daily mode, check guess count instead
+    // Note: Row advancement already happened before animation for rows 0-3
     if (isSoloMode.value) {
-      soloGuessCount.value++
-      
       if (soloGuessCount.value >= 5) {
         // Max guesses reached in solo mode, reveal word
         await revealWord()
         isProcessingGuess.value = false
         return 'revealed'
       } else {
-        // Continue to next row
-        currentRow.value++
-        currentColumn.value = 0
-        copyHintsToNextRow()
+        // Already advanced row before animation, just start timer
         if (timerEnabled.value) {
           startTimer()
         }
@@ -626,8 +648,6 @@ export const useGameStore = defineStore('game', () => {
     }
     
     if (isDailyMode.value) {
-      dailyGuessCount.value++
-      
       if (dailyGuessCount.value >= 5) {
         // Max guesses reached in daily mode, reveal word and move to next
         await revealWord()
@@ -638,11 +658,7 @@ export const useGameStore = defineStore('game', () => {
         isProcessingGuess.value = false
         return 'revealed'
       } else {
-        // Continue to next row
-        currentRow.value++
-        currentColumn.value = 0
-        copyHintsToNextRow()
-        
+        // Already advanced row before animation
         isProcessingGuess.value = false
         
         // Check if timer ended while processing this guess
@@ -654,10 +670,12 @@ export const useGameStore = defineStore('game', () => {
       }
     }
     
-    if (currentRow.value >= 4) {
+    if (animationRow >= 4) {
       // Row 4+: Wrong word triggers turn switch
       if (turnSwitchCount.value >= 2) {
         // Already had 2 turn switches, reveal word
+        // Make sure activePlayer is set to round starter before revealing
+        activePlayer.value = roundStartPlayer.value
         await revealWord()
         isProcessingGuess.value = false
         return 'revealed'
@@ -668,10 +686,7 @@ export const useGameStore = defineStore('game', () => {
         return 'switched'
       }
     } else {
-      // Rows 0-3: Move to next row and continue with same player
-      currentRow.value++
-      currentColumn.value = 0
-      copyHintsToNextRow()
+      // Rows 0-3: Already advanced to next row before animation
       if (!isDailyMode.value) {
         startTimer()
       }
@@ -934,43 +949,96 @@ export const useGameStore = defineStore('game', () => {
     
     // Award partial points for the final word if time ran out
     if (revealCurrentWord && targetWord.value && currentRow.value < MAX_ATTEMPTS) {
-      const row = cells.value[currentRow.value]
-      const guessLetters = row.map(cell => cell.letter)
+      const targetLetters = targetWord.value.split('')
+      let partialScore = 0
       
-      // Only score if there's at least one filled letter
-      const hasFilledLetters = guessLetters.some(letter => letter !== '')
-      if (hasFilledLetters) {
-        const targetLetters = targetWord.value.split('')
-        const letterCounts = new Map()
-        let partialScore = 0
+      // Track how many times each letter was awarded 5 points in first loop
+      const letterCorrectCounts = new Map()
+      
+      // First loop: Award 5 points for each target position found at correct position
+      for (let targetPos = 1; targetPos < wordLength.value; targetPos++) {
+        const targetLetter = targetLetters[targetPos]
         
-        // Count letters in target word
-        targetLetters.forEach(letter => {
-          letterCounts.set(letter, (letterCounts.get(letter) || 0) + 1)
-        })
-        
-        // First pass: award 5 points for correctly positioned letters (skip first letter)
-        for (let i = 1; i < wordLength.value; i++) {
-          if (guessLetters[i] && guessLetters[i] === targetLetters[i]) {
-            partialScore += 5
-            letterCounts.set(guessLetters[i], letterCounts.get(guessLetters[i]) - 1)
+        // Check if any guess has this letter at this exact position
+        let foundCorrect = false
+        for (let row = 0; row <= currentRow.value; row++) {
+          const cellLetter = cells.value[row][targetPos].letter
+          if (cellLetter === targetLetter) {
+            foundCorrect = true
+            break
           }
         }
         
-        // Second pass: award 2 points for correct letters in wrong position (skip first letter)
-        for (let i = 1; i < wordLength.value; i++) {
-          if (guessLetters[i] && guessLetters[i] !== targetLetters[i]) {
-            if (letterCounts.get(guessLetters[i]) > 0) {
+        if (foundCorrect) {
+          partialScore += 5
+          letterCorrectCounts.set(targetLetter, (letterCorrectCounts.get(targetLetter) || 0) + 1)
+        }
+      }
+      
+      // Calculate max count of each letter across all guesses
+      const maxLetterCounts = new Map()
+      for (let row = 0; row <= currentRow.value; row++) {
+        const letterCounts = new Map()
+        for (let col = 0; col < wordLength.value; col++) {
+          const letter = cells.value[row][col].letter
+          if (letter) {
+            letterCounts.set(letter, (letterCounts.get(letter) || 0) + 1)
+          }
+        }
+        // Update max counts
+        for (const [letter, count] of letterCounts) {
+          maxLetterCounts.set(letter, Math.max(maxLetterCounts.get(letter) || 0, count))
+        }
+      }
+      
+      // Track how many times we've processed each letter in second loop
+      const letterWrongPosCounts = new Map()
+      
+      // Second loop: Award 2 points for wrong positions (only if player had enough of this letter)
+      for (let targetPos = 1; targetPos < wordLength.value; targetPos++) {
+        const targetLetter = targetLetters[targetPos]
+        const correctCount = letterCorrectCounts.get(targetLetter) || 0
+        const wrongPosCount = letterWrongPosCounts.get(targetLetter) || 0
+        const requiredCount = correctCount + wrongPosCount + 1 // +1 for this iteration
+        
+        // Check if player had at least requiredCount of this letter in any guess
+        const maxCount = maxLetterCounts.get(targetLetter) || 0
+        if (maxCount >= requiredCount) {
+          // Check if this position was already awarded in first loop
+          let foundCorrect = false
+          for (let row = 0; row <= currentRow.value; row++) {
+            const cellLetter = cells.value[row][targetPos].letter
+            if (cellLetter === targetLetter) {
+              foundCorrect = true
+              break
+            }
+          }
+          
+          if (!foundCorrect) {
+            // Check if any guess has this letter at a different position
+            let foundWrongPos = false
+            for (let row = 0; row <= currentRow.value; row++) {
+              for (let col = 0; col < wordLength.value; col++) {
+                const cellLetter = cells.value[row][col].letter
+                if (cellLetter === targetLetter && col !== targetPos) {
+                  foundWrongPos = true
+                  break
+                }
+              }
+              if (foundWrongPos) break
+            }
+            
+            if (foundWrongPos) {
               partialScore += 2
-              letterCounts.set(guessLetters[i], letterCounts.get(guessLetters[i]) - 1)
+              letterWrongPosCounts.set(targetLetter, wrongPosCount + 1)
             }
           }
         }
-        
-        // Add partial score to player
-        if (partialScore > 0) {
-          player1.value.score += partialScore
-        }
+      }
+      
+      // Add partial score to player
+      if (partialScore > 0) {
+        player1.value.score += partialScore
       }
     }
     
@@ -1059,6 +1127,8 @@ export const useGameStore = defineStore('game', () => {
     // Check if we've already had 2 turn switches
     if (turnSwitchCount.value >= 2) {
       // Reveal word instead of switching again
+      // Make sure activePlayer is set to round starter before revealing
+      activePlayer.value = roundStartPlayer.value
       await revealWord()
       return
     }

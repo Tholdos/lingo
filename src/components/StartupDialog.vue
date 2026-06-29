@@ -293,7 +293,15 @@
 
         <div class="leaderboard">
           <h3>Top 5 van vandaag</h3>
-          <div v-if="dailyLeaderboard.length === 0" class="no-scores">
+          <div v-if="leaderboardLoading" class="loading-scores">
+            <div class="spinner-small"></div>
+            <span>Scores laden...</span>
+          </div>
+          <div v-else-if="leaderboardError" class="error-scores">
+            <p>Kon scores niet laden</p>
+            <button @click="loadDailyLeaderboard" class="btn-retry">Opnieuw proberen</button>
+          </div>
+          <div v-else-if="dailyLeaderboard.length === 0" class="no-scores">
             Nog geen scores vandaag
           </div>
           <div v-else class="leaderboard-list">
@@ -360,6 +368,8 @@ const dailyWordLength = ref(props.initialWordLength)
 const dailyCompleted = ref(false)
 const dailyLeaderboard = ref([])
 const dailyLoading = ref(false)
+const leaderboardLoading = ref(false)
+const leaderboardError = ref(false)
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://lingo-server-oybx.onrender.com'
 
 // Computed property for player name label
@@ -585,13 +595,27 @@ function handleJoinCodeInput(event) {
 
 // Daily challenge functions
 async function loadDailyLeaderboard() {
+  leaderboardLoading.value = true
+  leaderboardError.value = false
+  
   try {
-    const response = await fetch(`${SERVER_URL}/api/daily/leaderboard/${dailyWordLength.value}`)
+    const response = await fetch(`${SERVER_URL}/api/daily/leaderboard/${dailyWordLength.value}`, {
+      signal: AbortSignal.timeout(10000) // 10 second timeout
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+    
     const data = await response.json()
     dailyLeaderboard.value = data.leaderboard || []
+    leaderboardError.value = false
   } catch (error) {
     console.error('Error loading leaderboard:', error)
     dailyLeaderboard.value = []
+    leaderboardError.value = true
+  } finally {
+    leaderboardLoading.value = false
   }
 }
 
@@ -711,17 +735,17 @@ watch(player1Name, () => {
 })
 
 // Watch for word length changes to update leaderboard and completion
-watch(dailyWordLength, () => {
+watch(dailyWordLength, async () => {
   if (activeTab.value === 'daily') {
-    loadDailyLeaderboard()
+    await loadDailyLeaderboard()
     checkDailyCompleted()
   }
 })
 
 // Watch for tab changes to daily
-watch(activeTab, (newTab) => {
+watch(activeTab, async (newTab) => {
   if (newTab === 'daily') {
-    loadDailyLeaderboard()
+    await loadDailyLeaderboard()
     checkDailyCompleted()
   }
 })
@@ -1014,6 +1038,50 @@ onUnmounted(() => {
   color: #888;
   font-style: italic;
   padding: 1rem;
+}
+
+.loading-scores {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  color: #aaa;
+}
+
+.spinner-small {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #444;
+  border-top-color: #6ddd6d;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.error-scores {
+  text-align: center;
+  padding: 1rem;
+}
+
+.error-scores p {
+  color: #ff6b6b;
+  margin: 0 0 0.75rem 0;
+}
+
+.btn-retry {
+  background: #444;
+  color: #fff;
+  border: 1px solid #666;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.btn-retry:hover {
+  background: #555;
+  border-color: #777;
 }
 
 .leaderboard-list {
