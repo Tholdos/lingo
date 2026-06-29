@@ -545,7 +545,9 @@ onUnmounted(() => {
 }
 
 .emoji-pop-leave-active {
-  animation: emojiFadeOut 0.2s ease-in;
+  /* No leave animation needed - emoji already faded to 0 */
+  opacity: 0;
+  transition: none;
 }
 
 @keyframes emojiContinuousFade {
@@ -563,12 +565,6 @@ onUnmounted(() => {
   }
   100% {
     transform: translate(-50%, -50%) scale(0.9);
-    opacity: 0;
-  }
-}
-
-@keyframes emojiFadeOut {
-  to {
     opacity: 0;
   }
 }
