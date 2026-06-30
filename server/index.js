@@ -58,6 +58,7 @@ const io = new Server(server, {
 })
 
 const rooms = new Map()
+const disconnectTimers = new Map() // Track disconnect grace periods
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id)
@@ -80,15 +81,67 @@ io.on('connection', (socket) => {
     const playerName = typeof data === 'string' ? null : data.playerName
     
     const room = rooms.get(roomId)
-    if (room && !room.guest) {
-      room.guest = socket.id
-      socket.join(roomId)
-      socket.emit('roomJoined', roomId)
-      // Send player name to host
-      io.to(room.host).emit('playerJoined', { playerName })
-      console.log('Player joined room:', roomId, 'with name:', playerName)
+    
+    if (!room) {
+      socket.emit('joinError', 'Kamer niet gevonden')
+      return
+    }
+    
+    // Clear any pending disconnect timer for this room
+    if (disconnectTimers.has(roomId)) {
+      clearTimeout(disconnectTimers.get(roomId))
+      disconnectTimers.delete(roomId)
+      console.log('Cancelled disconnect timer for room:', roomId)
+    }
+    
+    // Check if this is the host reconnecting (room exists, no guest yet or guest socket matches)
+    if (!room.guest) {
+      // First player joining or host reconnecting
+      if (!room.host || room.host === socket.id) {
+        // Update host socket ID (in case of reconnection)
+        room.host = socket.id
+        socket.join(roomId)
+        socket.emit('roomJoined', roomId)
+        console.log('Host joined/reconnected to room:', roomId)
+      } else {
+        // This is the guest joining for the first time
+        room.guest = socket.id
+        socket.join(roomId)
+        socket.emit('roomJoined', roomId)
+        // Send player name to host
+        io.to(room.host).emit('playerJoined', { playerName })
+        console.log('Guest joined room:', roomId, 'with name:', playerName)
+      }
     } else {
-      socket.emit('joinError', 'Kamer niet gevonden of vol')
+      // Room is full - this might be a reconnection
+      // Allow either player to update their socket ID
+      const oldHostId = room.host
+      const oldGuestId = room.guest
+      
+      // Simple heuristic: if one of the old socket IDs is not connected, update it
+      const hostConnected = io.sockets.sockets.has(oldHostId)
+      const guestConnected = io.sockets.sockets.has(oldGuestId)
+      
+      if (!hostConnected) {
+        // Host is reconnecting
+        room.host = socket.id
+        socket.join(roomId)
+        socket.emit('roomJoined', roomId)
+        console.log('Host reconnected to room:', roomId, 'old:', oldHostId, 'new:', socket.id)
+      } else if (!guestConnected) {
+        // Guest is reconnecting
+        room.guest = socket.id
+        socket.join(roomId)
+        socket.emit('roomJoined', roomId)
+        console.log('Guest reconnected to room:', roomId, 'old:', oldGuestId, 'new:', socket.id)
+      } else if (oldHostId === socket.id || oldGuestId === socket.id) {
+        // Socket ID hasn't changed, just rejoin the room
+        socket.join(roomId)
+        socket.emit('roomJoined', roomId)
+        console.log('Player rejoined room:', roomId)
+      } else {
+        socket.emit('joinError', 'Kamer is vol')
+      }
     }
   })
 
@@ -113,10 +166,27 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id)
+    
+    // Find rooms where this socket is a player
     for (const [roomId, room] of rooms.entries()) {
       if (room.host === socket.id || room.guest === socket.id) {
-        io.to(roomId).emit('playerLeft')
-        rooms.delete(roomId)
+        console.log('Player disconnected from room:', roomId, '- starting grace period')
+        
+        // Don't delete immediately - set a grace period for reconnection
+        // If a timer already exists, clear it first
+        if (disconnectTimers.has(roomId)) {
+          clearTimeout(disconnectTimers.get(roomId))
+        }
+        
+        // Set 60-second grace period for reconnection
+        const timer = setTimeout(() => {
+          console.log('Grace period expired for room:', roomId, '- deleting room')
+          io.to(roomId).emit('playerLeft')
+          rooms.delete(roomId)
+          disconnectTimers.delete(roomId)
+        }, 60000) // 60 seconds grace period
+        
+        disconnectTimers.set(roomId, timer)
       }
     }
   })
