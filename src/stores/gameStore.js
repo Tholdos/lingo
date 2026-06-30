@@ -81,6 +81,7 @@ export const useGameStore = defineStore('game', () => {
   let serverUrl = null
   const targetScore = ref(500) // Target score for multiplayer games
   const gameWinner = ref(null) // Winner name when target score reached
+  let wasInMultiplayerGame = false // Track if we were in a game before disconnect
   
   // Emoji reactions
   const receivedEmoji = ref(null) // Currently displayed emoji from opponent
@@ -1749,7 +1750,13 @@ export const useGameStore = defineStore('game', () => {
   // Multiplayer functions
   function connectToServer(url) {
     serverUrl = url
-    socket.value = io(url)
+    socket.value = io(url, {
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000
+    })
     
     socket.value.on('connect', () => {
       isConnected.value = true
@@ -1760,11 +1767,22 @@ export const useGameStore = defineStore('game', () => {
       if (isReconnecting.value && roomId.value) {
         attemptRejoinRoom()
       }
+      // If we were in a multiplayer game before disconnect, rejoin
+      else if (wasInMultiplayerGame && roomId.value && gameStarted.value) {
+        console.log('Auto-rejoining room after reconnect')
+        isReconnecting.value = true
+        attemptRejoinRoom()
+      }
     })
 
     socket.value.on('disconnect', () => {
       isConnected.value = false
       console.log('Disconnected from server')
+      
+      // Track that we were in a multiplayer game
+      if (isMultiplayer.value && roomId.value && gameStarted.value) {
+        wasInMultiplayerGame = true
+      }
       
       // If we're in a multiplayer game, attempt to reconnect
       if (isMultiplayer.value && roomId.value && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
@@ -1874,9 +1892,17 @@ export const useGameStore = defineStore('game', () => {
   async function reconnectSocket() {
     if (!serverUrl || !isMultiplayer.value || !roomId.value) return
     
+    console.log('Manually reconnecting socket...')
     isReconnecting.value = true
     
-    // Close existing socket if any
+    // If socket exists and is connected, try to rejoin directly
+    if (socket.value?.connected) {
+      console.log('Socket connected, attempting to rejoin room')
+      attemptRejoinRoom()
+      return
+    }
+    
+    // Otherwise force a new connection
     if (socket.value) {
       socket.value.close()
     }
@@ -2157,6 +2183,7 @@ export const useGameStore = defineStore('game', () => {
     gameWinner.value = null
     targetScore.value = 500
     receivedEmoji.value = null
+    wasInMultiplayerGame = false
     // Clear rejoin timeout if it exists
     if (rejoinTimeout) {
       clearTimeout(rejoinTimeout)

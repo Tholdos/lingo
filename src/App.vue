@@ -230,10 +230,14 @@ function handleVisibilityChange() {
     // App came back to foreground
     console.log('App returned to foreground')
     
-    // If we're in multiplayer and not connected, try to reconnect
-    if (gameStore.isMultiplayer && !gameStore.isConnected && gameStore.roomId) {
-      console.log('Attempting to reconnect...')
-      gameStore.reconnectSocket()
+    // If we're in multiplayer with a room ID, always try to reconnect/rejoin
+    if (gameStore.isMultiplayer && gameStore.roomId) {
+      console.log('Multiplayer game detected, attempting to reconnect/rejoin...')
+      
+      // Wait a short moment for socket to auto-reconnect, then force rejoin
+      setTimeout(() => {
+        gameStore.reconnectSocket()
+      }, 500)
     }
   } else {
     // App went to background
