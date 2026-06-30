@@ -1913,7 +1913,49 @@ export const useGameStore = defineStore('game', () => {
       return
     }
     
-    socket.value.emit('createRoom')
+    // Create a promise that resolves when roomCreated event is received
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        console.error('Room creation timeout - retrying...')
+        // Retry once
+        socket.value.emit('createRoom')
+        
+        // Set a second timeout for the retry
+        const retryTimeout = setTimeout(() => {
+          console.error('Room creation failed after retry')
+          reject(new Error('Room creation timeout'))
+        }, 5000)
+        
+        // Listen for the retry response
+        const retryHandler = (id) => {
+          clearTimeout(retryTimeout)
+          socket.value.off('roomCreated', retryHandler)
+          roomId.value = id
+          waitingForPlayer.value = true
+          isReconnecting.value = false
+          console.log('Room created (after retry):', id)
+          resolve()
+        }
+        socket.value.once('roomCreated', retryHandler)
+      }, 5000)
+      
+      // Set up one-time listener for the room creation response
+      const handler = (id) => {
+        clearTimeout(timeout)
+        roomId.value = id
+        waitingForPlayer.value = true
+        isReconnecting.value = false
+        console.log('Room created:', id)
+        resolve()
+      }
+      
+      socket.value.once('roomCreated', handler)
+      socket.value.emit('createRoom')
+    }).catch((error) => {
+      console.error('Failed to create room:', error)
+      alert('Kon geen kamer aanmaken. Probeer het opnieuw.')
+      resetMultiplayer()
+    })
   }
 
   async function joinRoom(id, playerName = null) {
@@ -1944,7 +1986,60 @@ export const useGameStore = defineStore('game', () => {
       return
     }
     
-    socket.value.emit('joinRoom', { roomId: id, playerName: playerName || 'Speler 2' })
+    // Create a promise that resolves when roomJoined event is received
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        console.error('Room join timeout - retrying...')
+        // Retry once
+        socket.value.emit('joinRoom', { roomId: id, playerName: playerName || 'Speler 2' })
+        
+        // Set a second timeout for the retry
+        const retryTimeout = setTimeout(() => {
+          console.error('Room join failed after retry')
+          reject(new Error('Room join timeout'))
+        }, 5000)
+        
+        // Listen for the retry response
+        const retryHandler = (joinedId) => {
+          clearTimeout(retryTimeout)
+          socket.value.off('roomJoined', retryHandler)
+          socket.value.off('joinError', errorHandler)
+          roomId.value = joinedId
+          waitingForPlayer.value = false
+          isReconnecting.value = false
+          console.log('Room joined (after retry):', joinedId)
+          resolve()
+        }
+        socket.value.once('roomJoined', retryHandler)
+      }, 5000)
+      
+      // Handle join errors
+      const errorHandler = (message) => {
+        clearTimeout(timeout)
+        socket.value.off('roomJoined', successHandler)
+        console.error('Join error:', message)
+        reject(new Error(message))
+      }
+      
+      // Set up one-time listener for the room join response
+      const successHandler = (joinedId) => {
+        clearTimeout(timeout)
+        socket.value.off('joinError', errorHandler)
+        roomId.value = joinedId
+        waitingForPlayer.value = false
+        isReconnecting.value = false
+        console.log('Room joined:', joinedId)
+        resolve()
+      }
+      
+      socket.value.once('roomJoined', successHandler)
+      socket.value.once('joinError', errorHandler)
+      socket.value.emit('joinRoom', { roomId: id, playerName: playerName || 'Speler 2' })
+    }).catch((error) => {
+      console.error('Failed to join room:', error)
+      alert(`Kon niet deelnemen aan kamer: ${error.message}`)
+      resetMultiplayer()
+    })
   }
 
   function emitGameState() {
