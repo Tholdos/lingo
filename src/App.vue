@@ -192,12 +192,38 @@ onMounted(async () => {
   
   // Handle app visibility changes (backgrounding/foregrounding)
   document.addEventListener('visibilitychange', handleVisibilityChange)
+  
+  // Handle page unload (browser close/refresh) - submit daily score if in progress
+  window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyPress)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener('beforeunload', handleBeforeUnload)
 })
+
+function handleBeforeUnload(event) {
+  // Submit daily score if challenge is in progress
+  if (gameStore.isDailyMode && !gameStore.isDailyComplete && gameStore.gameStarted) {
+    // Use sendBeacon for reliable submission during page unload
+    if (window.dailyChallenge && navigator.sendBeacon) {
+      const score = gameStore.player1.score
+      const wordsGuessed = gameStore.dailyWordsGuessed
+      
+      const data = JSON.stringify({
+        playerName: gameStore.player1.name,
+        wordLength: gameStore.wordLength,
+        score,
+        wordsGuessed
+      })
+      
+      const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://lingo-server-oybx.onrender.com'
+      navigator.sendBeacon(`${SERVER_URL}/api/daily/submit`, new Blob([data], { type: 'application/json' }))
+      console.log('Daily score submitted via beacon on page unload')
+    }
+  }
+}
 
 function handleVisibilityChange() {
   if (!document.hidden) {
@@ -259,7 +285,12 @@ function handleNewWord() {
   gameStore.startNewWord()
 }
 
-function handleNewGame() {
+async function handleNewGame() {
+  // If in daily mode and not yet completed, submit current score
+  if (gameStore.isDailyMode && !gameStore.isDailyComplete) {
+    await gameStore.submitDailyScore()
+  }
+  
   gameStore.closeOverlay()
   gameStore.resetMultiplayer()
   

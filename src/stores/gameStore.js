@@ -1098,6 +1098,17 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  async function submitDailyScore() {
+    // Submit current daily challenge score
+    if (isDailyMode.value && !isDailyComplete.value && window.dailyChallenge) {
+      const score = player1.value.score
+      const wordsGuessed = dailyWordsGuessed.value
+      console.log('Submitting daily score on early quit:', score, wordsGuessed)
+      await window.dailyChallenge.onComplete(score, wordsGuessed)
+      isDailyComplete.value = true  // Mark as complete to avoid double submission
+    }
+  }
+
   function closeOverlay() {
     showOverlay.value = false
     
@@ -2238,6 +2249,9 @@ export const useGameStore = defineStore('game', () => {
     sendEmoji,
     targetScore,
     gameWinner,
-    receivedEmoji
+    receivedEmoji,
+    submitDailyScore,
+    isDailyMode,
+    isDailyComplete
   }
 })
