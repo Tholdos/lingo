@@ -1761,24 +1761,8 @@ export const useGameStore = defineStore('game', () => {
       }
     })
     
-    socket.value.on('roomCreated', (id) => {
-      roomId.value = id
-      waitingForPlayer.value = true
-      isReconnecting.value = false
-      console.log('Room created:', id)
-    })
-
-    socket.value.on('roomJoined', (id) => {
-      roomId.value = id
-      waitingForPlayer.value = false
-      isReconnecting.value = false
-      // Clear rejoin timeout if it exists
-      if (rejoinTimeout) {
-        clearTimeout(rejoinTimeout)
-        rejoinTimeout = null
-      }
-      console.log('Room joined:', id)
-    })
+    // Note: roomCreated and roomJoined events are now handled
+    // in the createRoom() and joinRoom() functions with promises
     
     socket.value.on('playerJoined', (data) => {
       waitingForPlayer.value = false
@@ -1812,7 +1796,8 @@ export const useGameStore = defineStore('game', () => {
     })
 
     socket.value.on('joinError', (message) => {
-      // Clear reconnecting state on error
+      // Only handle reconnection errors here
+      // Regular join errors are handled in the joinRoom() promise
       if (isReconnecting.value) {
         isReconnecting.value = false
         console.log('Reconnection failed:', message)
@@ -1821,9 +1806,8 @@ export const useGameStore = defineStore('game', () => {
           alert('Kan niet opnieuw verbinden met de kamer. De kamer bestaat mogelijk niet meer.')
           resetMultiplayer()
         }
-      } else {
-        alert(message)
       }
+      // Don't alert for regular join errors - those are handled by joinRoom() promise
     })
     
     // Emoji reactions
