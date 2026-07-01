@@ -34,6 +34,7 @@
       <PlayerPanel 
         :player="gameStore.player1" 
         :is-active="gameStore.activePlayer === 1"
+        :target-score="gameStore.isMultiplayer ? gameStore.targetScore : null"
       />
       <CircularTimer 
         v-if="gameStore.showGrid && (gameStore.isDailyMode || (!gameStore.isSoloMode || gameStore.timerEnabled))"
@@ -46,6 +47,7 @@
         v-if="!gameStore.isSoloMode && !gameStore.isDailyMode"
         :player="gameStore.player2" 
         :is-active="gameStore.activePlayer === 2"
+        :target-score="gameStore.isMultiplayer ? gameStore.targetScore : null"
       />
     </div>
     

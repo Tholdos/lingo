@@ -2,7 +2,14 @@
   <div :class="['player-panel', { active: isActive }]">
     <div class="player-info">
       <h2 class="player-name">{{ player.name }}</h2>
-      <div class="player-score">{{ player.score }}</div>
+      <div class="player-score">
+        <template v-if="targetScore">
+          {{ player.score }} / {{ targetScore }}
+        </template>
+        <template v-else>
+          {{ player.score }}
+        </template>
+      </div>
     </div>
   </div>
 </template>
@@ -10,7 +17,8 @@
 <script setup>
 defineProps({
   player: Object,
-  isActive: Boolean
+  isActive: Boolean,
+  targetScore: Number
 })
 </script>
 
