@@ -2163,25 +2163,37 @@ export const useGameStore = defineStore('game', () => {
     const shouldUpdateCells = !isMyTurn() || incomingColumnEmpty
     
     if (shouldUpdateCells) {
-      // Before updating cells, detect state changes and play sounds for non-active player
-      if (isMultiplayer.value && !isMyTurn() && state.cells) {
-        // Find cells that have changed state from Empty/Hint to Correct/Incorrect/WrongPosition
-        for (let r = 0; r < Math.min(cells.value.length, state.cells.length); r++) {
-          for (let c = 0; c < Math.min(cells.value[r].length, state.cells[r].length); c++) {
-            const oldState = cells.value[r][c].state
-            const newState = state.cells[r][c].state
-            
-            // Play sound if state changed from Empty/Hint to a guess result
-            if ((oldState === LetterState.Empty || oldState === LetterState.Hint) &&
-                (newState === LetterState.Correct || newState === LetterState.Incorrect || newState === LetterState.WrongPosition)) {
-              playLetterSound(newState)
-            }
-          }
-        }
-      }
+      // Store old cells for sound comparison (only if we're the non-active player)
+      const oldCells = isMultiplayer.value && !isMyTurn() && state.cells ? 
+        JSON.parse(JSON.stringify(cells.value)) : null
       
+      // Update cells first to ensure UI updates
       currentColumn.value = state.currentColumn
       cells.value = state.cells
+      
+      // After updating, play sounds for non-active player based on state changes
+      if (oldCells && Array.isArray(oldCells) && Array.isArray(cells.value)) {
+        try {
+          for (let r = 0; r < Math.min(oldCells.length, cells.value.length); r++) {
+            if (oldCells[r] && cells.value[r]) {
+              for (let c = 0; c < Math.min(oldCells[r].length, cells.value[r].length); c++) {
+                const oldState = oldCells[r][c]?.state
+                const newState = cells.value[r][c]?.state
+                
+                // Play sound if state changed from Empty/Hint to a guess result
+                if (oldState && newState &&
+                    (oldState === LetterState.Empty || oldState === LetterState.Hint) &&
+                    (newState === LetterState.Correct || newState === LetterState.Incorrect || newState === LetterState.WrongPosition)) {
+                  playLetterSound(newState)
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // Silently ignore sound errors to not break game sync
+          console.warn('Error playing multiplayer sounds:', e)
+        }
+      }
     }
     
     // Sync overlay state
