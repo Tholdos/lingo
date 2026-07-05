@@ -329,14 +329,40 @@ export const useGameStore = defineStore('game', () => {
     // Use current column directly - all letters are overwritable
     let col = currentColumn.value
     
-    // Add the letter at current position (overwrite any existing letter)
-    if (col < wordLength.value) {
-      row[col].letter = letter.toUpperCase()
-      // Keep track of original state for hints to restore visual styling
-      if (row[col].state !== LetterState.Hint) {
-        row[col].state = LetterState.Empty
+    // Special handling for position 0 (first letter)
+    if (col === 0) {
+      const requiredFirstLetter = targetWord.value[0]
+      const typedLetter = letter.toUpperCase()
+      
+      // If user types a letter that's NOT the required first letter at position 0
+      if (typedLetter !== requiredFirstLetter) {
+        // Keep the hint letter at position 0
+        row[0].letter = requiredFirstLetter
+        row[0].state = LetterState.Hint
+        // Place the typed letter at position 1 instead
+        if (wordLength.value > 1) {
+          row[1].letter = typedLetter
+          if (row[1].state !== LetterState.Hint) {
+            row[1].state = LetterState.Empty
+          }
+          currentColumn.value = 2  // Move to position 2 for next letter
+        }
+      } else {
+        // User typed the correct first letter, accept it normally
+        row[0].letter = typedLetter
+        row[0].state = LetterState.Hint  // Keep it as a hint visually
+        currentColumn.value = 1
       }
-      currentColumn.value = col + 1
+    } else {
+      // Normal handling for positions 1 and beyond
+      if (col < wordLength.value) {
+        row[col].letter = letter.toUpperCase()
+        // Keep track of original state for hints to restore visual styling
+        if (row[col].state !== LetterState.Hint) {
+          row[col].state = LetterState.Empty
+        }
+        currentColumn.value = col + 1
+      }
     }
 
     if (isMultiplayer.value) {
@@ -352,12 +378,38 @@ export const useGameStore = defineStore('game', () => {
     const col = currentColumn.value - 1
     
     if (col >= 0 && col < wordLength.value) {
-      row[col].letter = letter.toUpperCase()
-      // Keep track of original state for hints to restore visual styling
-      if (row[col].state !== LetterState.Hint) {
-        row[col].state = LetterState.Empty
+      const typedLetter = letter.toUpperCase()
+      
+      // Special handling for position 0 (first letter)
+      if (col === 0) {
+        const requiredFirstLetter = targetWord.value[0]
+        
+        // If user tries to replace position 0 with wrong letter
+        if (typedLetter !== requiredFirstLetter) {
+          // Keep the hint letter at position 0
+          row[0].letter = requiredFirstLetter
+          row[0].state = LetterState.Hint
+          // Place the typed letter at position 1 instead if there's room
+          if (wordLength.value > 1) {
+            row[1].letter = typedLetter
+            if (row[1].state !== LetterState.Hint) {
+              row[1].state = LetterState.Empty
+            }
+            currentColumn.value = 2  // Move cursor to position 2
+          }
+        } else {
+          // User typed the correct first letter
+          row[0].letter = typedLetter
+          row[0].state = LetterState.Hint
+        }
+      } else {
+        // Normal handling for positions 1 and beyond
+        row[col].letter = typedLetter
+        // Keep track of original state for hints to restore visual styling
+        if (row[col].state !== LetterState.Hint) {
+          row[col].state = LetterState.Empty
+        }
       }
-      // Don't advance currentColumn since we're replacing, not adding
     }
 
     if (isMultiplayer.value) {
@@ -2260,13 +2312,11 @@ export const useGameStore = defineStore('game', () => {
     if (isMultiplayer.value && !isMyTurn()) {
       // Victory tune when entering victory mode
       if (!oldIsVictoryMode && isVictoryMode.value) {
-        console.log('Non-active player: Playing victory tune')
         playVictoryTune()
       }
       
       // Reveal answer sound when reveal animation starts
       if (!oldIsAnimatingReveal && isAnimatingReveal.value) {
-        console.log('Non-active player: Playing reveal answer sound', 'old:', oldIsAnimatingReveal, 'new:', isAnimatingReveal.value)
         playRevealAnswerSound()
       }
       
