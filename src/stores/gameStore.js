@@ -2162,14 +2162,27 @@ export const useGameStore = defineStore('game', () => {
     const incomingColumnEmpty = state.currentColumn === 0
     const shouldUpdateCells = !isMyTurn() || incomingColumnEmpty
     
+    console.log('updateFromGameState - isMyTurn:', isMyTurn(), 'shouldUpdateCells:', shouldUpdateCells, 'hasCells:', !!state.cells)
+    
     if (shouldUpdateCells) {
       // Store old cells for sound comparison (only if we're the non-active player)
-      const oldCells = isMultiplayer.value && !isMyTurn() && state.cells ? 
-        JSON.parse(JSON.stringify(cells.value)) : null
+      let oldCells = null
+      if (isMultiplayer.value && !isMyTurn() && state.cells && cells.value) {
+        try {
+          oldCells = JSON.parse(JSON.stringify(cells.value))
+        } catch (e) {
+          console.warn('Failed to clone cells for sound:', e)
+        }
+      }
       
-      // Update cells first to ensure UI updates
-      currentColumn.value = state.currentColumn
-      cells.value = state.cells
+      // Update cells and column - always update if state has cells
+      if (state.currentColumn !== undefined) {
+        currentColumn.value = state.currentColumn
+      }
+      if (state.cells) {
+        cells.value = state.cells
+        console.log('Updated cells for non-active player, currentRow:', currentRow.value)
+      }
       
       // After updating, play sounds for non-active player based on state changes
       if (oldCells && Array.isArray(oldCells) && Array.isArray(cells.value)) {
