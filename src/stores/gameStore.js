@@ -1835,8 +1835,6 @@ export const useGameStore = defineStore('game', () => {
           }
           console.log('Successfully reconnected and synced game state')
         }
-      } else {
-        console.log('Skipping game state update (processing my own guess)')
       }
     })
     
@@ -2122,6 +2120,13 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function updateFromGameState(state) {
+    // Store old values for sound triggering on non-active player
+    const oldIsVictoryMode = isVictoryMode.value
+    const oldIsAnimatingReveal = isAnimatingReveal.value
+    const oldTurnSwitchCount = turnSwitchCount.value
+    const oldRevealedPositionsSize = revealedPositions.value.size
+    const oldTimeRemaining = timeRemaining.value
+    
     // Update player properties individually to avoid overwriting with stale state
     if (state.player1) {
       player1.value.name = state.player1.name
@@ -2163,8 +2168,6 @@ export const useGameStore = defineStore('game', () => {
     const incomingColumnEmpty = state.currentColumn === 0
     const shouldUpdateCells = !isMyTurn() || incomingColumnEmpty
     
-    console.log('updateFromGameState - isMyTurn:', isMyTurn(), 'shouldUpdateCells:', shouldUpdateCells, 'hasCells:', !!state.cells)
-    
     if (shouldUpdateCells) {
       // Store old cells for sound comparison (only if we're the non-active player)
       let oldCells = null
@@ -2182,7 +2185,6 @@ export const useGameStore = defineStore('game', () => {
       }
       if (state.cells) {
         cells.value = state.cells
-        console.log('Updated cells for non-active player, currentRow:', currentRow.value)
       }
       
       // After updating, play sounds for non-active player based on state changes
@@ -2226,6 +2228,35 @@ export const useGameStore = defineStore('game', () => {
     if (state.guessedWords) guessedWords.value = new Set(state.guessedWords)
     if (state.targetScore !== undefined) targetScore.value = state.targetScore
     if (state.gameWinner !== undefined) gameWinner.value = state.gameWinner
+    
+    // Play sounds for non-active player based on state changes
+    if (isMultiplayer.value && !isMyTurn()) {
+      // Victory tune when entering victory mode
+      if (!oldIsVictoryMode && isVictoryMode.value) {
+        playVictoryTune()
+      }
+      
+      // Reveal answer sound when reveal animation starts
+      if (!oldIsAnimatingReveal && isAnimatingReveal.value) {
+        playRevealAnswerSound()
+      }
+      
+      // Turn switch sounds when turn switches
+      if (state.turnSwitchCount !== undefined && state.turnSwitchCount > oldTurnSwitchCount) {
+        playTurnSwitchSound()
+        playTurnOverSound()
+      }
+      
+      // Bonus letter sound when revealed positions increase
+      if (state.revealedPositions && revealedPositions.value.size > oldRevealedPositionsSize) {
+        playBonusLetterSound()
+      }
+      
+      // Timeout buzzer when timer hits 0
+      if (oldTimeRemaining > 0 && timeRemaining.value === 0 && !isDailyMode.value) {
+        playTimeoutBuzzer()
+      }
+    }
   }
 
   function isMyTurn() {
