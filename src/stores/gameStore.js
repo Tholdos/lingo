@@ -1814,8 +1814,11 @@ export const useGameStore = defineStore('game', () => {
 
     socket.value.on('gameState', (state) => {
       // Always update from received state to keep both players in sync
-      // Don't update if we're currently processing a guess to avoid conflicts
-      if (!isProcessingGuess.value) {
+      // Only skip updates if it's MY turn AND I'm processing my own guess (prevents typing overwrite)
+      // Non-active player should ALWAYS receive updates
+      const shouldSkipUpdate = isMyTurn() && isProcessingGuess.value
+      
+      if (!shouldSkipUpdate) {
         // If we have a winner locally but the incoming state doesn't, reject the stale update
         // This prevents score rollback when the winning state is propagating
         if (gameWinner.value && !state.gameWinner) {
@@ -1832,6 +1835,8 @@ export const useGameStore = defineStore('game', () => {
           }
           console.log('Successfully reconnected and synced game state')
         }
+      } else {
+        console.log('Skipping game state update (processing my own guess)')
       }
     })
     
@@ -2110,8 +2115,7 @@ export const useGameStore = defineStore('game', () => {
       timerMedium: timerMedium.value,
       timerLong: timerLong.value,
       targetScore: targetScore.value,
-      gameWinner: gameWinner.value,
-      isProcessingGuess: isProcessingGuess.value
+      gameWinner: gameWinner.value
     }
     
     socket.value.emit('updateGameState', { roomId: roomId.value, gameState: state })
@@ -2153,9 +2157,6 @@ export const useGameStore = defineStore('game', () => {
     if (state.timerShort !== undefined) timerShort.value = state.timerShort
     if (state.timerMedium !== undefined) timerMedium.value = state.timerMedium
     if (state.timerLong !== undefined) timerLong.value = state.timerLong
-    
-    // Sync isProcessingGuess to prevent other player from typing during invalid word checks
-    if (state.isProcessingGuess !== undefined) isProcessingGuess.value = state.isProcessingGuess
     
     // Only skip cell/column updates if it's our turn AND we've started typing (prevents overwriting while typing)
     // Check the INCOMING state's currentColumn, not our local one
