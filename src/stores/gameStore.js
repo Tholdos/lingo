@@ -1806,6 +1806,12 @@ export const useGameStore = defineStore('game', () => {
       // Always update from received state to keep both players in sync
       // Don't update if we're currently processing a guess to avoid conflicts
       if (!isProcessingGuess.value) {
+        // If we have a winner locally but the incoming state doesn't, reject the stale update
+        // This prevents score rollback when the winning state is propagating
+        if (gameWinner.value && !state.gameWinner) {
+          console.log('Rejecting stale game state (winner already determined)')
+          return
+        }
         updateFromGameState(state)
         // If we were reconnecting and received game state, reconnection was successful
         if (isReconnecting.value) {
@@ -2092,15 +2098,35 @@ export const useGameStore = defineStore('game', () => {
       guessedWords: Array.from(guessedWords.value),
       timerShort: timerShort.value,
       timerMedium: timerMedium.value,
-      timerLong: timerLong.value
+      timerLong: timerLong.value,
+      targetScore: targetScore.value,
+      gameWinner: gameWinner.value
     }
     
     socket.value.emit('updateGameState', { roomId: roomId.value, gameState: state })
   }
 
   function updateFromGameState(state) {
-    player1.value = state.player1
-    player2.value = state.player2
+    // Update player properties individually to avoid overwriting with stale state
+    if (state.player1) {
+      player1.value.name = state.player1.name
+      // Don't decrease score if we're at or above target and have a winner
+      // This prevents score rollback during multiplayer sync
+      if (gameWinner.value && player1.value.score >= targetScore.value && state.player1.score < player1.value.score) {
+        console.log('Preventing player1 score rollback:', player1.value.score, '->', state.player1.score)
+      } else {
+        player1.value.score = state.player1.score
+      }
+    }
+    if (state.player2) {
+      player2.value.name = state.player2.name
+      // Don't decrease score if we're at or above target and have a winner
+      if (gameWinner.value && player2.value.score >= targetScore.value && state.player2.score < player2.value.score) {
+        console.log('Preventing player2 score rollback:', player2.value.score, '->', state.player2.score)
+      } else {
+        player2.value.score = state.player2.score
+      }
+    }
     activePlayer.value = state.activePlayer
     if (state.targetWord) targetWord.value = state.targetWord
     currentRow.value = state.currentRow
@@ -2141,6 +2167,8 @@ export const useGameStore = defineStore('game', () => {
     if (state.invalidWordData !== undefined) invalidWordData.value = state.invalidWordData
     if (state.bypassNextValidation !== undefined) bypassNextValidation.value = state.bypassNextValidation
     if (state.guessedWords) guessedWords.value = new Set(state.guessedWords)
+    if (state.targetScore !== undefined) targetScore.value = state.targetScore
+    if (state.gameWinner !== undefined) gameWinner.value = state.gameWinner
   }
 
   function isMyTurn() {
