@@ -288,7 +288,12 @@ export const useGameStore = defineStore('game', () => {
       }
     }
     
-    activePlayer.value = 1
+    // Randomize starting player in multiplayer mode
+    if (isMultiplayer.value) {
+      activePlayer.value = Math.random() < 0.5 ? 1 : 2
+    } else {
+      activePlayer.value = 1
+    }
     gameStarted.value = true
     showGrid.value = false
     
@@ -1350,8 +1355,13 @@ export const useGameStore = defineStore('game', () => {
     const postRevealDelay = (isSoloMode.value || isDailyMode.value) ? 300 : 1000
     await sleep(postRevealDelay)
     
-    // Set active player back to round start player for next word
-    activePlayer.value = roundStartPlayer.value
+    // Switch to the other player for next word (alternate turns after missed word)
+    if (isMultiplayer.value) {
+      activePlayer.value = activePlayer.value === 1 ? 2 : 1
+    } else {
+      // In local/solo mode, go back to round start player
+      activePlayer.value = roundStartPlayer.value
+    }
     
     // In daily mode, don't show overlay - just continue to next word
     if (!isDailyMode.value) {
@@ -2100,7 +2110,8 @@ export const useGameStore = defineStore('game', () => {
       timerMedium: timerMedium.value,
       timerLong: timerLong.value,
       targetScore: targetScore.value,
-      gameWinner: gameWinner.value
+      gameWinner: gameWinner.value,
+      isProcessingGuess: isProcessingGuess.value
     }
     
     socket.value.emit('updateGameState', { roomId: roomId.value, gameState: state })
@@ -2143,12 +2154,32 @@ export const useGameStore = defineStore('game', () => {
     if (state.timerMedium !== undefined) timerMedium.value = state.timerMedium
     if (state.timerLong !== undefined) timerLong.value = state.timerLong
     
+    // Sync isProcessingGuess to prevent other player from typing during invalid word checks
+    if (state.isProcessingGuess !== undefined) isProcessingGuess.value = state.isProcessingGuess
+    
     // Only skip cell/column updates if it's our turn AND we've started typing (prevents overwriting while typing)
     // Check the INCOMING state's currentColumn, not our local one
     const incomingColumnEmpty = state.currentColumn === 0
     const shouldUpdateCells = !isMyTurn() || incomingColumnEmpty
     
     if (shouldUpdateCells) {
+      // Before updating cells, detect state changes and play sounds for non-active player
+      if (isMultiplayer.value && !isMyTurn() && state.cells) {
+        // Find cells that have changed state from Empty/Hint to Correct/Incorrect/WrongPosition
+        for (let r = 0; r < Math.min(cells.value.length, state.cells.length); r++) {
+          for (let c = 0; c < Math.min(cells.value[r].length, state.cells[r].length); c++) {
+            const oldState = cells.value[r][c].state
+            const newState = state.cells[r][c].state
+            
+            // Play sound if state changed from Empty/Hint to a guess result
+            if ((oldState === LetterState.Empty || oldState === LetterState.Hint) &&
+                (newState === LetterState.Correct || newState === LetterState.Incorrect || newState === LetterState.WrongPosition)) {
+              playLetterSound(newState)
+            }
+          }
+        }
+      }
+      
       currentColumn.value = state.currentColumn
       cells.value = state.cells
     }
