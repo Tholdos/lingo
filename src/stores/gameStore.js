@@ -548,9 +548,8 @@ export const useGameStore = defineStore('game', () => {
       playLetterSound(finalStates[i])
       await sleep(250)
       
-      // Emit state for multiplayer to sync letter reveal animation
-      // But skip emissions for winning guesses to avoid rapid state updates
-      if (isMultiplayer.value && !isWinningGuess) {
+      // Emit state for multiplayer to sync letter reveal animation (including winning guesses)
+      if (isMultiplayer.value) {
         emitGameState()
       }
     }
@@ -1279,6 +1278,11 @@ export const useGameStore = defineStore('game', () => {
     // Set animation flag
     isAnimatingReveal.value = true
     
+    // Emit state immediately so non-active player knows animation is starting
+    if (isMultiplayer.value) {
+      emitGameState()
+    }
+    
     // Play reveal answer sound (duration ~750ms)
     playRevealAnswerSound()
     
@@ -1333,7 +1337,11 @@ export const useGameStore = defineStore('game', () => {
     const animationTime = (soundEnabled.value || isMultiplayer.value) ? 750 : 0
     await sleep(animationTime)
     
-    // Clear animation flag
+    // Clear animation flag and emit state
+    isAnimatingReveal.value = false
+    if (isMultiplayer.value) {
+      emitGameState()
+    }
     isAnimatingReveal.value = false
     
     // Small delay to show blank row - skip if sound off and not multiplayer
@@ -2196,20 +2204,33 @@ export const useGameStore = defineStore('game', () => {
       // After updating, play sounds for non-active player based on state changes
       if (oldCells && Array.isArray(oldCells) && Array.isArray(cells.value)) {
         try {
+          // Collect all letter state changes first
+          const letterChanges = []
           for (let r = 0; r < Math.min(oldCells.length, cells.value.length); r++) {
             if (oldCells[r] && cells.value[r]) {
               for (let c = 0; c < Math.min(oldCells[r].length, cells.value[r].length); c++) {
                 const oldState = oldCells[r][c]?.state
                 const newState = cells.value[r][c]?.state
                 
-                // Play sound if state changed from Empty/Hint to a guess result
+                // Check if state changed from Empty/Hint to a guess result
                 if (oldState && newState &&
                     (oldState === LetterState.Empty || oldState === LetterState.Hint) &&
                     (newState === LetterState.Correct || newState === LetterState.Incorrect || newState === LetterState.WrongPosition)) {
-                  playLetterSound(newState)
+                  letterChanges.push({ row: r, col: c, state: newState })
                 }
               }
             }
+          }
+          
+          // Play sounds with proper timing (250ms delay between each)
+          if (letterChanges.length > 0) {
+            // Play sounds asynchronously to not block state updates
+            (async () => {
+              for (const change of letterChanges) {
+                playLetterSound(change.state)
+                await sleep(250)
+              }
+            })()
           }
         } catch (e) {
           // Silently ignore sound errors to not break game sync
@@ -2239,11 +2260,13 @@ export const useGameStore = defineStore('game', () => {
     if (isMultiplayer.value && !isMyTurn()) {
       // Victory tune when entering victory mode
       if (!oldIsVictoryMode && isVictoryMode.value) {
+        console.log('Non-active player: Playing victory tune')
         playVictoryTune()
       }
       
       // Reveal answer sound when reveal animation starts
       if (!oldIsAnimatingReveal && isAnimatingReveal.value) {
+        console.log('Non-active player: Playing reveal answer sound', 'old:', oldIsAnimatingReveal, 'new:', isAnimatingReveal.value)
         playRevealAnswerSound()
       }
       
