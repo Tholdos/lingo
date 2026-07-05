@@ -46,6 +46,7 @@ export const useGameStore = defineStore('game', () => {
   const isAnimatingReveal = ref(false)
   const invalidWordData = ref(null)  // { word: string, type: 'invalid' | 'duplicate' | 'wrongFirstLetter' }
   const bypassNextValidation = ref(false)  // Flag to bypass dictionary check on next submit (for accepted invalid words)
+  const bonusLetterJustRevealed = ref(false)  // Flag to trigger bonus letter sound in multiplayer
   
   // Solo mode
   const isSoloMode = ref(false)
@@ -850,9 +851,14 @@ export const useGameStore = defineStore('game', () => {
         cells.value[currentRow.value][i].letter = targetWord.value[i]
         cells.value[currentRow.value][i].state = LetterState.Hint
         
+        // Set flag for multiplayer sound sync
+        bonusLetterJustRevealed.value = true
+        
         // Emit state for multiplayer
         if (isMultiplayer.value) {
           emitGameState()
+          // Clear flag immediately after emitting
+          bonusLetterJustRevealed.value = false
         }
         return
       }
@@ -2113,7 +2119,8 @@ export const useGameStore = defineStore('game', () => {
       timerMedium: timerMedium.value,
       timerLong: timerLong.value,
       targetScore: targetScore.value,
-      gameWinner: gameWinner.value
+      gameWinner: gameWinner.value,
+      bonusLetterJustRevealed: bonusLetterJustRevealed.value
     }
     
     socket.value.emit('updateGameState', { roomId: roomId.value, gameState: state })
@@ -2124,7 +2131,6 @@ export const useGameStore = defineStore('game', () => {
     const oldIsVictoryMode = isVictoryMode.value
     const oldIsAnimatingReveal = isAnimatingReveal.value
     const oldTurnSwitchCount = turnSwitchCount.value
-    const oldRevealedPositionsSize = revealedPositions.value.size
     const oldTimeRemaining = timeRemaining.value
     
     // Update player properties individually to avoid overwriting with stale state
@@ -2247,8 +2253,8 @@ export const useGameStore = defineStore('game', () => {
         playTurnOverSound()
       }
       
-      // Bonus letter sound when revealed positions increase
-      if (state.revealedPositions && revealedPositions.value.size > oldRevealedPositionsSize) {
+      // Bonus letter sound when flag is set
+      if (state.bonusLetterJustRevealed) {
         playBonusLetterSound()
       }
       
