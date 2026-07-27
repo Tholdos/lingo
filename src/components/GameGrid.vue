@@ -2,8 +2,9 @@
   <div class="game-container" ref="gameContainer" @click="focusMobileInput" :style="{ '--ui-scale': uiScale }">
     <h1 class="lingo-title">LINGO</h1>
     
-    <!-- Speaker icon for sound toggle -->
+    <!-- Speaker icon and text size toggle -->
     <div class="speaker-icon-container">
+      <TextSizeButton />
       <SpeakerIcon />
     </div>
     
@@ -34,7 +35,7 @@
       <PlayerPanel 
         :player="gameStore.player1" 
         :is-active="gameStore.activePlayer === 1"
-        :target-score="gameStore.isMultiplayer ? gameStore.targetScore : null"
+        :target-score="(!gameStore.isSoloMode && !gameStore.isDailyMode && gameStore.targetScore > 0) ? gameStore.targetScore : null"
       />
       <CircularTimer 
         v-if="gameStore.showGrid && (gameStore.isDailyMode || (!gameStore.isSoloMode || gameStore.timerEnabled))"
@@ -47,7 +48,7 @@
         v-if="!gameStore.isSoloMode && !gameStore.isDailyMode"
         :player="gameStore.player2" 
         :is-active="gameStore.activePlayer === 2"
-        :target-score="gameStore.isMultiplayer ? gameStore.targetScore : null"
+        :target-score="(!gameStore.isSoloMode && !gameStore.isDailyMode && gameStore.targetScore > 0) ? gameStore.targetScore : null"
       />
     </div>
     
@@ -104,6 +105,7 @@ import PlayerPanel from './PlayerPanel.vue'
 import LetterCell from './LetterCell.vue'
 import CircularTimer from './CircularTimer.vue'
 import SpeakerIcon from './SpeakerIcon.vue'
+import TextSizeButton from './TextSizeButton.vue'
 
 const gameStore = useGameStore()
 const mobileInput = ref(null)
@@ -320,6 +322,9 @@ onUnmounted(() => {
   top: 1.5rem;
   right: 1.5rem;
   z-index: 100;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 @media (max-width: 768px) {

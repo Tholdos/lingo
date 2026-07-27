@@ -86,6 +86,11 @@ import OverlayDialog from '@/components/OverlayDialog.vue'
 
 const gameStore = useGameStore()
 const showStartup = ref(true)
+
+// Apply compact mode CSS class immediately and reactively
+watch(() => gameStore.compactMode, (val) => {
+  document.documentElement.classList.toggle('compact-mode', val)
+}, { immediate: true })
 const invalidWordDialog = ref(false)
 const currentInvalidWord = ref('')
 const duplicateWord = ref(false)

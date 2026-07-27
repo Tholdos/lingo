@@ -60,6 +60,11 @@ body {
   position: relative;
 }
 
+/* Compact mode: scale entire UI to 75% for small screens (e.g. iPhone SE) */
+html.compact-mode {
+  zoom: 0.75;
+}
+
 #app {
   min-height: 100vh;
   overflow-x: hidden;

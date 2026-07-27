@@ -3,8 +3,9 @@
     <div class="dialog-content">
       <h1 class="dialog-title">LINGO</h1>
       
-      <!-- Speaker icon for sound toggle -->
+      <!-- Speaker icon and text size toggle -->
       <div class="speaker-icon-container">
+        <TextSizeButton />
         <SpeakerIcon />
       </div>
       
@@ -133,6 +134,12 @@
 
         <div class="form-group">
           <label><input type="checkbox" v-model="showHintLetters" /> Bonusletter weergeven bij beurtverlies</label>
+        </div>
+
+        <div class="form-group">
+          <label>Doelscore:</label>
+          <input v-model.number="targetScoreLocal" type="number" min="0" max="5000" step="50" class="timer-input" />
+          <span class="hint-text">Eerste speler die deze score behaalt wint</span>
         </div>
 
         <div class="form-group">
@@ -337,6 +344,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import SpeakerIcon from './SpeakerIcon.vue'
+import TextSizeButton from './TextSizeButton.vue'
 
 const props = defineProps({
   initialTab: {
@@ -369,6 +377,7 @@ const joinCode = ref('')
 const player1Input = ref(null)
 const player2Input = ref(null)
 const targetScoreMultiplayer = ref(500)  // Target score for multiplayer games
+const targetScoreLocal = ref(500)  // Target score for local duel games
 
 // Daily challenge state
 const dailyWordLength = ref(props.initialWordLength)
@@ -516,7 +525,8 @@ function handleStartGame() {
     wordLength: wordLength.value,
     showHintLetters: showHintLetters.value,
     playIntroTune: playIntroTune.value,
-    timerDuration: timerDuration.value
+    timerDuration: timerDuration.value,
+    targetScore: targetScoreLocal.value
   }
   
   // Save settings to localStorage (except timer - it auto-updates based on word length)
@@ -857,6 +867,9 @@ onUnmounted(() => {
   position: absolute;
   top: 1rem;
   right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 /* Tab Navigation */

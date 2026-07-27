@@ -20,6 +20,7 @@ export const useGameStore = defineStore('game', () => {
   const isTimerActive = ref(false)
   const showHintLetters = ref(true)
   const soundEnabled = ref(true)  // Toggle for all sound effects
+  const compactMode = ref(false)  // Toggle for 25% smaller UI (helps on small iPhone screens)
   
   // Custom timer durations (default: 14, 19, 24)
   const timerShort = ref(14)  // For words 5-7 letters
@@ -96,6 +97,16 @@ export const useGameStore = defineStore('game', () => {
     }
   } catch (e) {
     console.error('Failed to load sound preference:', e)
+  }
+
+  // Load compact mode preference from localStorage
+  try {
+    const savedCompact = localStorage.getItem('lingoCompactMode')
+    if (savedCompact !== null) {
+      compactMode.value = JSON.parse(savedCompact)
+    }
+  } catch (e) {
+    console.error('Failed to load compact mode preference:', e)
   }
 
   // Preload audio files for smoother playback
@@ -242,10 +253,8 @@ export const useGameStore = defineStore('game', () => {
     wordLength.value = settings.wordLength
     showHintLetters.value = settings.showHintLetters
     
-    // Set target score for multiplayer
-    if (isMultiplayer.value && settings.targetScore) {
-      targetScore.value = settings.targetScore
-    }
+    // Set target score (for multiplayer and local duel games)
+    targetScore.value = settings.targetScore !== undefined ? settings.targetScore : 0
     gameWinner.value = null
     
     // Track game mode and word length
@@ -629,8 +638,8 @@ export const useGameStore = defineStore('game', () => {
         player2.value.score += 50
       }
       
-      // Check if target score reached in multiplayer mode
-      if (isMultiplayer.value && targetScore.value > 0) {
+      // Check if target score reached (multiplayer or local duel)
+      if (!isSoloMode.value && !isDailyMode.value && targetScore.value > 0) {
         if (player1.value.score >= targetScore.value) {
           gameWinner.value = player1.value.name
           stopTimer()
@@ -2398,6 +2407,15 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  function toggleCompactMode() {
+    compactMode.value = !compactMode.value
+    try {
+      localStorage.setItem('lingoCompactMode', JSON.stringify(compactMode.value))
+    } catch (e) {
+      console.error('Failed to save compact mode preference:', e)
+    }
+  }
+
   return {
     // State
     player1,
@@ -2466,6 +2484,8 @@ export const useGameStore = defineStore('game', () => {
     retryInvalidWord,
     markWordIncorrect,
     toggleSound,
+    compactMode,
+    toggleCompactMode,
     emitGameState,
     reconnectSocket,
     sendEmoji,
